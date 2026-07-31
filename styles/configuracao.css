@@ -1,0 +1,332 @@
+@import "root.css"; 
+
+/* Cards */
+.cfg-card {
+    background: var(--cor-fundo-card);
+    border-radius: 30px;
+    box-shadow: 0px 4px 4px var(--sombra-caixa);
+    padding: 32px 28px;
+    margin-bottom: 24px;
+    display: flex; 
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* Section headings */
+.cfg-card h2 {
+    color: var(--cor-titulo);
+    font-size: 1.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+
+/* Field wrapper — floating label (espelha exatamente .campo do Estilos.css) */
+.cfg-field {
+    position: relative;
+    margin: 4px 0;
+}
+
+/* Label começa DENTRO do input no centro vertical, flutua para CIMA ao focar */
+.cfg-field label {
+    position: absolute;
+    left: 18px;
+    top: 21px;
+    /* (58px altura - ~16px label) / 2 = centro vertical do input */
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--cor-texto-secundario);
+    background-color: var(--cor-fundo-card);
+    /* cobre a borda ao flutuar */
+    padding: 0 4px;
+    pointer-events: none;
+    transition: 0.2s ease-in-out;
+    z-index: 1;
+}
+
+/* Estado flutuante: top -1px = label assenta EM CIMA da borda (igual .campo) */
+.cfg-field select:focus+label,
+.cfg-field select:not([value=""]):valid+label,
+.cfg-field input:focus+label,
+.cfg-field input:not(:placeholder-shown)+label {
+    top: -1px;
+    font-size: 12px;
+    color: var(--cor-principal);
+}
+
+/* Seta do select */
+.cfg-field:has(select)::after {
+    content: "▾";
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--cor-principal);
+    pointer-events: none;
+    font-size: 0.9rem;
+    z-index: 1;
+}
+
+.cfg-field select,
+.cfg-field input[type="text"],
+.cfg-field input[type="number"],
+.cfg-field input[type="date"] {
+    height: 58px;
+    border-radius: 10px;
+    border: 2px solid var(--cor-principal);
+    padding: 0 18px;
+    font-size: 17px;
+    color: var(--cor-principal);
+    background: transparent;
+    font-weight: 600;
+    width: 100%;
+    appearance: none;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.cfg-field select:focus,
+.cfg-field input:focus {
+    outline: none;
+    border-color: var(--cor-hover);
+    transition: border-color 0.2s ease-in-out;
+}
+
+/* Row of fields */
+.cfg-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.cfg-row .cfg-field {
+    flex: 1;
+    min-width: 180px;
+    max-width: 300px;
+}
+
+.cfg-row .cfg-btn {
+    align-self: flex-end;
+}
+
+/* Two-column layout (form + checkboxes) */
+.cfg-split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.cfg-split-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 260px;
+}
+
+.cfg-split-side {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 240px;
+}
+
+/* Checkboxes */
+.cfg-check-label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    cursor: pointer;
+}
+
+.cfg-check-label input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    accent-color: var(--cor-principal);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.cfg-switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.cfg-switch-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+}
+
+.cfg-switch {
+    position: relative;
+    width: 54px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.cfg-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.cfg-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--cor-toggle-inativo);
+    border-radius: 999px;
+    transition: .2s;
+}
+
+.cfg-switch-slider:before {
+    content: "";
+    position: absolute;
+    height: 24px;
+    width: 24px;
+    left: 3px;
+    top: 3px;
+    background: var(--cor-fundo-card);
+    border-radius: 50%;
+    transition: .2s;
+    box-shadow: 0 1px 3px var(--sombra-caixa);
+}
+
+.cfg-switch input:checked+.cfg-switch-slider {
+    background: var(--cor-principal);
+}
+
+.cfg-switch input:checked+.cfg-switch-slider:before {
+    transform: translateX(24px);
+}
+
+/* Buttons */
+.cfg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    padding: 0 24px;
+    min-width: 130px;
+    background: var(--cor-principal);
+    color: var(--cor-texto-claro);
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background 0.2s;
+    align-self: flex-start;
+    margin: 0;
+}
+
+.cfg-btn:hover {
+    background: var(--cor-hover);
+}
+
+.cfg-btn.danger {
+    background: var(--red-700);
+}
+
+.cfg-btn.danger:hover {
+    background: var(--red-800);
+}
+
+/* Fix: .containerGeral button (especificidade 11) sobrescreve .cfg-btn (10).
+           Esta regra tem especificidade 21 e restaura padding/margin corretos. */
+.cfg-page button.cfg-btn {
+    padding: 0 24px;
+    margin: 0;
+    height: 52px;
+}
+
+/* List container */
+.cfg-list-box {
+    border-radius: 15px;
+    border: 2px solid var(--cor-principal);
+    overflow: hidden;
+}
+
+.cfg-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--cor-tinte-borda);
+    font-size: 16px;
+}
+
+.cfg-list-item:last-child {
+    border-bottom: none;
+}
+
+.cfg-list-item .cfg-btn.danger {
+    height: 38px;
+    min-width: 38px;
+    padding: 0 12px;
+    font-size: 15px;
+}
+
+.cfg-delete-label {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+}
+
+/* Table inside cards */
+.tabela-config {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.cfg-table {
+    width: 100%;
+    border-collapse: separate;
+    border-radius: 15px;
+    overflow: hidden;
+    border-spacing: 0;
+    border: 2px solid var(--cor-principal);
+}
+
+.cfg-table th {
+    text-align: left;
+    padding: 12px 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--cor-principal);
+    border-bottom: 1px solid var(--cor-tinte-borda);
+    background: var(--cor-fundo-pagina);
+}
+
+.cfg-table td {
+    padding: 12px 18px;
+    font-size: 0.95rem;
+    color: var(--cor-principal);
+    border-bottom: 1px solid var(--cor-tinte-borda);
+}
+
+.cfg-table tr:last-child td {
+    border-bottom: none;
+}
+
+.cfg-table-empty td {
+    text-align: center;
+    color: var(--cor-texto-secundario);
+    font-style: italic;
+}
+
+.btn-downDados button {
+    display: flex;
+    flex-direction: column;
+}

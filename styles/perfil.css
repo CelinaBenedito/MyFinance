@@ -1,0 +1,384 @@
+@import "root.css";
+
+/* ── Meu Perfil page ── */
+
+/* ── Shared card ── */
+.pf-card {
+    background: var(--cor-fundo-card);
+    border-radius: 30px;
+    box-shadow: 0px 4px 4px var(--sombra-caixa);
+    padding: 28px 24px;
+    margin-bottom: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.pf-card h2 {
+    color: var(--cor-titulo);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* ── Profile hero ── */
+.pf-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 8px;
+}
+
+/* Avatar circle */
+.pf-avatar {
+    width: 200px;
+    height: 200px;
+    border-radius: 9999px;
+    border: 2px solid var(--cor-principal);
+    background: var(--cor-fundo-card);
+    box-shadow: 0px 4px 4px var(--sombra-caixa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pf-avatar i {
+    font-size: 5rem;
+    color: var(--cor-principal);
+}
+
+/* XP bar */
+.pf-xp-wrap {
+    width: 320px;
+    background: var(--cor-fundo-card);
+    border-radius: 100px;
+    box-shadow: 0px 2px 4px var(--sombra-caixa);
+    height: 22px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.pf-xp-bar {
+    height: 100%;
+    width: 30%;
+    background: var(--cor-principal);
+    border-radius: 100px;
+    transition: width 0.4s ease;
+}
+
+.pf-xp-label {
+    position: absolute;
+    right: 12px;
+    font-size: 11px;
+    color: var(--cor-texto-secundario);
+    font-weight: 200;
+}
+
+/* Name row */
+.pf-nome-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.pf-nome {
+    color: var(--cor-titulo);
+    font-size: 2.2rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.15;
+}
+
+.pf-edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin: 0;
+    color: var(--cor-principal);
+    font-size: 1.5rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+
+/* Info row */
+.pf-info-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+}
+
+.pf-info-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 1rem;
+}
+
+.pf-info-item strong {
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+}
+
+.pf-info-item span {
+    font-weight: 500;
+    color: var(--cor-texto-principal);
+}
+
+/* ── Temas ── */
+.pf-temas-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: flex-end;
+}
+
+.pf-tema-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.pf-tema-swatch {
+    width: 56px;
+    height: 56px;
+    border-radius: 50px;
+    transition: border-color 0.2s, transform 0.15s;
+}
+
+.pf-tema-item:hover .pf-tema-swatch {
+    transform: scale(1.1);
+}
+
+.pf-tema-item.ativo .pf-tema-swatch {
+    border: 3px solid var(--cor-para-destacar);
+}
+
+.pf-tema-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    text-align: center;
+}
+/* Toggles */
+.pf-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.pf-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--cor-texto-principal);
+}
+
+.pf-toggle {
+    position: relative;
+    width: 44px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.pf-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.pf-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--cor-toggle-inativo);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.pf-toggle-slider::after {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    top: 2px;
+    left: 2px;
+    background: var(--cor-toggle-handle);
+    border-radius: 12px;
+    transition: transform 0.2s;
+}
+
+.pf-toggle input:checked+.pf-toggle-slider {
+    background: var(--cor-fundo-pagina);
+    outline-color: var(--cor-principal);
+}
+
+.pf-toggle input:checked+.pf-toggle-slider::after {
+    background: var(--cor-principal);
+    transform: translateX(22px);
+}
+
+.pf-toggle-state {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--cor-texto-principal);
+    min-width: 24px;
+}
+
+/* ── Shared btn (same as cfg-btn) ── */
+.pf-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    padding: 0 24px;
+    min-width: 130px;
+    background: var(--cor-principal);
+    color: var(--cor-texto-claro);
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background 0.2s;
+    align-self: flex-start;
+    margin: 0;
+}
+
+.pf-btn:hover {
+    background: var(--cor-hover);
+}
+
+.pf-btn.danger {
+    background: var(--red-700);
+}
+
+.pf-btn.danger:hover {
+    background: var(--red-800);
+}
+
+/* ── Resumo de Configurações ── */
+.pf-resumo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px 24px;
+}
+
+.pf-resumo-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pf-resumo-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+}
+
+.pf-resumo-valor {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--cor-texto-principal);
+}
+
+/* ── Tables (institutions / categories) ── */
+.pf-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 15px;
+    overflow: hidden;
+    outline: 2px solid var(--cor-principal);
+}
+
+.pf-table th {
+    background: transparent;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    border-bottom: 1px solid var(--cor-tinte-borda);
+}
+
+.pf-table td {
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    color: var(--cor-para-destacar);
+    border-bottom: 1px solid var(--cor-tinte-borda);
+    vertical-align: middle;
+}
+
+.pf-table tr:last-child td {
+    border-bottom: none;
+}
+
+.pf-table-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pf-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin: 0;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    font-size: 1.2rem;
+}
+
+.pf-icon-btn.edit {
+    color: var(--cor-acao-editar);
+}
+
+.pf-icon-btn.edit:hover {
+    background: var(--cor-acao-editar-suave);
+}
+
+.pf-icon-btn.delete {   
+    color: var(--red-700);
+}
+
+.pf-icon-btn.delete:hover {
+    background: var(--cor-acao-deletar-suave);
+}
+
+.pf-campo {
+    display: flex;
+    flex-direction: column;
+}
+
+.pf-campo label {
+    margin-bottom: 20px;
+}
+
+.pf-campo input {
+    border: 1px solid var(--cor-principal);
+    padding: 10px 20px;
+    height: 50px;
+    width: 500px;
+    border-radius: 50px;
+    outline: none;
+}
+
+.btn-criticos .btn-urgente {
+    background-color: var(--red-700);
+    padding: 15px;
+    margin: 0 10px;
+}
