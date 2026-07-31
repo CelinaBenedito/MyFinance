@@ -1,0 +1,372 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+
+<head>
+    <link rel="icon" type="image/png" href="assets/glaceonIcon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil</title>
+    <link href='assets/boxicons/boxicons.min.css' rel='stylesheet' id='bx-local'>
+    <script>
+        // Fallback: se icones locais nao carregarem, usa CDN
+        (function(){
+            function checkAndFallback(){
+                var el = document.createElement('i');
+                el.className = 'bx bx-check';
+                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:20px;visibility:hidden';
+                document.body.appendChild(el);
+                var ff = window.getComputedStyle(el).fontFamily || '';
+                document.body.removeChild(el);
+                if(ff.toLowerCase().indexOf('boxicons') === -1){
+                    var l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css';
+                    document.head.appendChild(l);
+                }
+            }
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', checkAndFallback);
+            } else { checkAndFallback(); }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles/Estilos.css">
+    <link rel="stylesheet" href="styles/perfil.css">
+    <link rel="stylesheet" href="styles/root.css">
+</head>
+
+<body data-tema="padrao" data-mode="light">
+    <div class="alerta" id="div_alerta" style="display:none;">
+        <div class="conteudoAlerta" id="conteudoAlerta"></div>
+    </div>
+    <div class="containerGeral">
+        <nav class="side-bar" id="navbar">
+            <ul>
+                <li onclick="sidebarFunction()">
+                    <i class='bx bx-menu-closer'></i>
+                </li>
+                <li>
+                    <a href="dashboard.html"><i class='bx bx-home'></i> <span id="home">Home</span></a>
+                </li>
+                <li>
+                    <a href="adicionarRegistros.html"><i class='bx bx-file-plus'></i> <span id="add">Adicionar
+                            Registros</span></a>
+                </li>
+                <li>
+                    <a href="registros.html"><i class='bx bx-address-book'></i> <span id="reg">Registros</span></a>
+                </li>
+                <li>
+                    <a href="agendaGastos.html"><i class='bx bx-calendar-event'></i> <span id="agenda">Agenda</span></a>
+                </li>
+                <li>
+                    <a href="caixinhas.html"><i class='bx bx-piggy-bank'></i><span id="caixinhas">Poupança</span></a>
+                </li>
+                <li>
+                    <a id="toggleTheme">
+                        <span id="icone"><i class='bx bx-moon'></i></span>
+                        <span id="tema">Tema</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="configurações.html"><i class='bx bx-cog'></i> <span id="config">Configurações</span></a>
+                </li>
+            </ul>
+        </nav>
+
+        <div id="main" class="main pf-page">
+            <h1>Meu Perfil</h1>
+
+            <!-- ── PROFILE HERO ── -->
+            <div class="pf-card">
+                <div class="pf-hero">
+                    <!-- Avatar -->
+                    <div class="pf-avatar" id="pfAvatar" title="Clique para alterar a foto" style="cursor:pointer;">
+                        <img id="pfAvatarImg" alt="Foto de perfil"
+                            style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        <i class='bx bx-user' id="pfAvatarIcon"></i>
+                    </div>
+
+                    <!-- XP bar -->
+                    <div class="pf-xp-wrap">
+                        <div class="pf-xp-bar" id="xpBar"></div>
+                        <span class="pf-xp-label">LVL 1 - 150 XP</span>
+                    </div>
+
+                    <!-- Name + edit -->
+                    <div class="pf-nome-row">
+                        <div class="pf-nome" id="pfNome">Usuário<br>da Silva Santos</div>
+                        <button class="pf-edit-btn" title="Editar nome" onclick="abrirEdicaoPerfil()"><i
+                                class='bx bx-edit'></i></button>
+                    </div>
+
+                    <!-- Sex / birthdate / email -->
+                    <div class="pf-info-row">
+                        <div class="pf-info-item">
+                            <strong>Sexo:</strong>
+                            <span id="pfSexo">Masculino</span>
+                        </div>
+                        <div class="pf-info-item">
+                            <strong>Data de Nascimento:</strong>
+                            <span id="pfNascimento">01/01/2000</span>
+                        </div>
+                    </div>
+                    <div class="pf-info-row">
+                        <div class="pf-info-item">
+                            <strong>Email:</strong>
+                            <span id="pfEmail">usuariodasilva@email.com</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="file" id="inputFotoPerfil" accept="image/*" style="display:none;">
+
+            <!-- ── TEMAS DO SITE ── -->
+            <div class="pf-card">
+                <h2>Temas do site</h2>
+
+                <!-- Swatches -->
+                <div class="pf-temas-grid" id="temasGrid">
+                    <div class="pf-tema-item ativo" data-tema="padrao">
+                        <div class="pf-tema-swatch"
+                            style="background: linear-gradient(180deg, #E2F4FF 0%, #004C58 100%);"></div>
+                        <span class="pf-tema-label">Padrão</span>
+                    </div>
+                    <div class="pf-tema-item" data-tema="ceu-azul">
+                        <div class="pf-tema-swatch"
+                            style="background: linear-gradient(180deg, #E2F4FF 0%, #00AEFF 100%);"></div>
+                        <span class="pf-tema-label">Céu-Azul</span>
+                    </div>
+                    <div class="pf-tema-item" data-tema="purpura" id="purpura-mode">
+                        <div class="pf-tema-swatch"
+                            style="background: linear-gradient(180deg, #F5CBFF 0%, #680082 100%);"></div>
+                        <span class="pf-tema-label">Purpura</span>
+                    </div>
+                    <div class="pf-tema-item" data-tema="vampirico">
+                        <div class="pf-tema-swatch"
+                            style="background: linear-gradient(180deg, #FF0000 0%, #000000 100%);"></div>
+                        <span class="pf-tema-label">Vampirico</span>
+                    </div>
+                    <div class="pf-tema-item" data-tema="branco">
+                        <div class="pf-tema-swatch"
+                            style="background: linear-gradient(180deg, #ffffff 0%, #595959 100%);"></div>
+                        <span class="pf-tema-label">Branco</span>
+                    </div>
+                </div>
+
+                <!-- Toggles -->
+                <div class="pf-toggles">
+                    <div class="pf-toggle-row">
+                        <label class="pf-toggle">
+                            <input type="checkbox" id="toggleGlaceon" checked>
+                            <span class="pf-toggle-slider"></span>
+                        </label>
+                        <span class="pf-toggle-state" id="estadoGlaceon">ON</span>
+                        <span>Glaceon</span>
+                    </div>
+                    <div class="pf-toggle-row">
+                        <label class="pf-toggle">
+                            <input type="checkbox" id="toggleVidro">
+                            <span class="pf-toggle-slider"></span>
+                        </label>
+                        <span class="pf-toggle-state" id="estadoVidro">OFF</span>
+                        <span>Modo Vidro</span>
+                    </div>
+                </div>
+
+                <button class="pf-btn" id="btnEscolherTema">Escolher</button>
+            </div>
+
+            <!-- ── RESUMO DAS CONFIGURAÇÕES ── -->
+            <div class="pf-card">
+                <h2>Resumo das Configurações</h2>
+
+                <div class="pf-resumo-grid">
+                    <div class="pf-resumo-item">
+                        <span class="pf-resumo-label">Início do mês Fiscal:</span>
+                        <span class="pf-resumo-valor" id="resumoMesFiscal">—</span>
+                    </div>
+                    <div class="pf-resumo-item">
+                        <span class="pf-resumo-label">Limite mensal total:</span>
+                        <span class="pf-resumo-valor" id="resumoLimite">—</span>
+                    </div>
+                    <div class="pf-resumo-item">
+                        <span class="pf-resumo-label">Última Atualização:</span>
+                        <span class="pf-resumo-valor" id="resumoAtualizacao">—</span>
+                    </div>
+                </div>
+
+                <a href="configurações.html" style="text-decoration:none;">
+                    <button class="pf-btn">Ir para Configurações</button>
+                </a>
+            </div>
+
+            <!-- ── INSTITUIÇÕES VINCULADAS ── -->
+            <div class="pf-card">
+                <h2>Instituições Vinculadas</h2>
+
+                <table class="pf-table" id="tabelaInstituicoes">
+                    <thead>
+                        <tr>
+                            <th>Instituição</th>
+                            <th>Limite</th>
+                            <th>Última modificação</th>
+                            <th>Opções</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoInstituicoes">
+                        <tr>
+                            <td>Nubank</td>
+                            <td>R$ 1.000,00</td>
+                            <td>07/04/26 15:50</td>
+                            <td>
+                                <div class="pf-table-actions">
+                                    <button class="pf-icon-btn edit" title="Editar"><i class='bx bx-edit'></i></button>
+                                    <button class="pf-icon-btn delete" title="Excluir"><i
+                                            class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <button class="pf-btn" onclick="adicionarInstituicaoModal()">Adicionar Instituição</button>
+            </div>
+
+            <!-- ── CATEGORIAS REGISTRADAS ── -->
+            <div class="pf-card">
+                <h2>Categorias Registradas</h2>
+
+                <table class="pf-table" id="tabelaCategorias">
+                    <thead>
+                        <tr>
+                            <th>Categoria</th>
+                            <th>Limite</th>
+                            <th>Última modificação</th>
+                            <th>Opções</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoCategorias">
+                        <tr>
+                            <td>Comida</td>
+                            <td>R$ —</td>
+                            <td>07/04/26 15:30</td>
+                            <td>
+                                <div class="pf-table-actions">
+                                    <button class="pf-icon-btn edit" title="Editar"><i class='bx bx-edit'></i></button>
+                                    <button class="pf-icon-btn delete" title="Excluir"><i
+                                            class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Roupa</td>
+                            <td>R$ 150,00</td>
+                            <td>07/04/26 15:40</td>
+                            <td>
+                                <div class="pf-table-actions">
+                                    <button class="pf-icon-btn edit" title="Editar"><i class='bx bx-edit'></i></button>
+                                    <button class="pf-icon-btn delete" title="Excluir"><i
+                                            class='bx bx-trash'></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <button class="pf-btn" onclick="adicionarCategoriaModal()">Adicionar Categoria</button>
+            </div>
+
+            <!-- ── SEGURANÇA ── -->
+            <div class="pf-card">
+                <h2>Segurança</h2>
+
+                <div class="pf-campo">
+                    <label>Senha Atual:</label>
+                    <input type="text" id="edSenhaAntiga" placeholder="Senha Atual...">
+                </div>
+                <div class="pf-campo">
+                    <label>Nova Senha:</label>
+                    <input type="text" id="edSenhaNova" placeholder="Nova Senha...">
+                </div>
+                <div class="pf-campo">
+                    <label>Corfirmar Nova Senha:</label>
+                    <input type="text" id="edSenhaNovaConf" placeholder="Corfirmar Nova Senha...">
+                </div>
+
+                <button id="btnEditarSenha" onclick="editarSenhaUsuario()" class="pf-btn">Alterar Senha</button>
+            </div>
+
+            <!-- AÇÕES CRÍTICAS -->
+            <div class="pf-card">
+                <h2>Ações Críticas</h2>
+                <div class="btn-criticos">
+                    <button id="btnApagarTodosEventos" onclick="deletarTodosEventos()" class="btn-urgente">Apagar todos
+                        os eventos financeiros</button>
+                    <button id="btnDesvincularTodasInstituicoes" onclick="desvincularTodasInstituicoes()"
+                        class="btn-urgente">Desvincular todas as Instituições</button>
+                    <button id="btnExcluirConta" onclick="excluirConta()" class="btn-urgente">Excluir minha
+                        conta</button>
+                </div>
+            </div>
+        </div>
+        <!-- <footer>
+            <div class="footer-conteudo">
+                <div class="footer-desenvolvedores">
+                    <p>
+                        <strong>Desenvolvido Por:</strong> <br>
+                        Celina dos Santos Benedito <br>
+                        Isaak Guilherme Menezes <br>
+                        Leticia da Silva Santos
+                    </p>
+                </div>
+                <div>
+                    <p>
+                        <strong>Idealizado Por:</strong><br>
+                        Celina dos Santos Benedito
+                    </p>
+                </div>
+                <div>
+                    <p>Celina dos Santos Benedito</p>
+                </div>
+                <div>
+                    <p>Isaak Guilheme Menezes</p>
+                </div>
+                <div>
+                    <p>Leticia da Silva Santos</p>
+                </div>
+            </div>
+        </footer> -->
+    </div>
+    <script src="js/main.js"></script>
+    <script src="js/meuPerfil.js"></script>
+    <script src="js/navbar.js"></script>
+    <script>
+        // ── Toggle labels ──
+        document.getElementById("toggleGlaceon").addEventListener("change", function () {
+            document.getElementById("estadoGlaceon").textContent = this.checked ? "ON" : "OFF";
+        });
+        document.getElementById("toggleVidro").addEventListener("change", function () {
+            document.getElementById("estadoVidro").textContent = this.checked ? "ON" : "OFF";
+        });
+
+        btnEscolher.addEventListener("click", () => {
+
+            document.body.setAttribute("data-tema", temaSelecionado);
+
+            localStorage.setItem("tema", temaSelecionado);
+            console.log("mudei 3")
+
+        });
+
+
+        // ── Theme swatch selection ──
+        document.querySelectorAll(".pf-tema-item").forEach(item => {
+            item.addEventListener("click", () => {
+                document.querySelectorAll(".pf-tema-item").forEach(i => i.classList.remove("ativo"));
+                item.classList.add("ativo");
+            });
+        });
+    </script>
+</body>
+
+</html>

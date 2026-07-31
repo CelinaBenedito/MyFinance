@@ -1,0 +1,150 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/Estilos.css">
+    <link href='assets/boxicons/boxicons.min.css' rel='stylesheet' id='bx-local'>
+    <script>
+        // Fallback: se icones locais nao carregarem, usa CDN
+        (function(){
+            function checkAndFallback(){
+                var el = document.createElement('i');
+                el.className = 'bx bx-check';
+                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:20px;visibility:hidden';
+                document.body.appendChild(el);
+                var ff = window.getComputedStyle(el).fontFamily || '';
+                document.body.removeChild(el);
+                if(ff.toLowerCase().indexOf('boxicons') === -1){
+                    var l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css';
+                    document.head.appendChild(l);
+                }
+            }
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', checkAndFallback);
+            } else { checkAndFallback(); }
+        })();
+    </script>
+
+    <title>Escolher perfil</title>
+</head>
+
+<body>
+<div class="container">
+    <div class="main" id="main">
+        <div class="containerUsuarios">
+            <div class="usuarios" id="listaUsuarios">
+                <a href="cadastrar.html" title="Criar nova conta">
+                <div class="addUsuario">
+                    <i class="bx bx-plus"></i>
+                </div>
+                </a>
+            </div>
+        </div>
+        <a href="login.html" style="align-self: center; color: var(--cor-texto-alternativo); text-decoration: none;" title="Fazer login">Login</a>
+    </div>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+    (function () {
+        var _lista = document.getElementById("listaUsuarios");
+        // Referência CORRETA: o <a href="cadastrar.html"> é filho DIRETO de _lista.
+        // Usar .addUsuario causava NotFoundError silencioso porque ele é neto (está dentro do <a>).
+        var _btnAdd = _lista.querySelector("a[href='cadastrar.html']") || _lista.lastElementChild;
+        var _API = "http://localhost:8080";
+        var _jaRenderizou = false;
+
+        function _resolverImg(perfil) {
+            if (!perfil.imagem) return null;
+            if (/^data:image\//i.test(perfil.imagem) || /^https?:\/\//i.test(perfil.imagem)) return perfil.imagem;
+            return _API + (perfil.imagem.startsWith("/") ? perfil.imagem : "/" + perfil.imagem);
+        }
+
+        function _renderPerfis(perfis) {
+            if (!Array.isArray(perfis) || perfis.length === 0) return false;
+            _lista.querySelectorAll("p, .usuario-card").forEach(function (el) { el.remove(); });
+            perfis.forEach(function (perfil) {
+                var card = document.createElement("div");
+                card.className = "usuario-card";
+                var imgUrl = _resolverImg(perfil);
+                var imgFinal = imgUrl ? imgUrl + (imgUrl.includes("?") ? "&" : "?") + "v=" + Date.now() : null;
+                var avatarHtml = imgFinal
+                    ? '<img src="' + imgFinal + '" alt="' + (perfil.nome || "") + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'\'"><i class="bx bx-user" style="display:none;"></i>'
+                    : '<i class="bx bx-user"></i>';
+                card.innerHTML = '<div class="usuario">' + avatarHtml + '</div><span>' + (perfil.nome || "") + '</span>';
+                card.style.cursor = "pointer";
+                card.addEventListener("click", function () {
+                    localStorage.setItem("usuarioLogado", JSON.stringify(perfil));
+                    window.location.href = "dashboard.html";
+                });
+                // insertBefore precisa de filho DIRETO como referência
+                _lista.insertBefore(card, _btnAdd);
+            });
+            _jaRenderizou = true;
+            return true;
+        }
+
+        function _mostrarAviso(txt) {
+            _lista.querySelectorAll("p").forEach(function (el) { el.remove(); });
+            var av = document.createElement("p");
+            av.textContent = txt;
+            av.style.cssText = "color:var(--text-muted,#888);font-size:0.9rem;margin-bottom:1rem;";
+            _lista.insertBefore(av, _btnAdd);
+        }
+
+        // ── 1. localStorage (síncrono, como os temas) ───────────────────────
+        try {
+            var raw = localStorage.getItem("perfis");
+            var lsData = raw ? JSON.parse(raw) : [];
+            if (_renderPerfis(lsData)) { /* renderizado */ }
+        } catch (_) {}
+
+        if (!_jaRenderizou) {
+            _mostrarAviso("Carregando perfis...");
+        }
+
+        // ── 2. Polling para desktopBridge ────────────────────────────────────
+        // Após Worker.State.SUCCEEDED o JavaFX injeta window.desktopBridge.
+        // loadPerfis() é uma chamada Java síncrona — sem async, sem Promise.
+        (function poll(tentativa) {
+            if (window.desktopBridge) {
+                try {
+                    var json = window.desktopBridge.loadPerfis();
+                    var data = JSON.parse(json || "[]");
+                    if (Array.isArray(data) && data.length > 0) {
+                        try { localStorage.setItem("perfis", json); } catch (_) {}
+                        _renderPerfis(data);
+                    } else if (!_jaRenderizou) {
+                        _mostrarAviso("Nenhum perfil salvo. Faça login ou cadastre-se.");
+                    }
+                } catch (e) {
+                    if (!_jaRenderizou) _mostrarAviso("Nenhum perfil salvo. Faça login ou cadastre-se.");
+                }
+                return;
+            }
+            if (tentativa < 30) {
+                setTimeout(function () { poll(tentativa + 1); }, 100);
+            } else if (!_jaRenderizou) {
+                _mostrarAviso("Nenhum perfil salvo. Faça login ou cadastre-se.");
+            }
+        }(0));
+
+        // ── 3. Atalho: chamado diretamente pelo Java (DesktopApp) ───────────
+        window._carregarPerfisViaBridge = function (jsonString) {
+            try {
+                var data = JSON.parse(jsonString || "[]");
+                if (Array.isArray(data) && data.length > 0) {
+                    try { localStorage.setItem("perfis", jsonString); } catch (_) {}
+                    _renderPerfis(data);
+                }
+            } catch (e) {}
+        };
+    }());
+</script>
+</body>
+
+</html>

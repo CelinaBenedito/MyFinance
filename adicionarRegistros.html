@@ -1,0 +1,466 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <link rel="icon" type="image/png" href="assets/glaceonIcon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adicionar Registros</title>
+    <link href='assets/boxicons/boxicons.min.css' rel='stylesheet' id='bx-local'>
+    <script>
+        // Fallback: se icones locais nao carregarem, usa CDN
+        (function(){
+            function checkAndFallback(){
+                var el = document.createElement('i');
+                el.className = 'bx bx-check';
+                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:20px;visibility:hidden';
+                document.body.appendChild(el);
+                var ff = window.getComputedStyle(el).fontFamily || '';
+                document.body.removeChild(el);
+                if(ff.toLowerCase().indexOf('boxicons') === -1){
+                    var l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css';
+                    document.head.appendChild(l);
+                }
+            }
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', checkAndFallback);
+            } else { checkAndFallback(); }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles/Estilos.css">
+    <link rel="stylesheet" href="styles/registro.css">
+    <link rel="stylesheet" href="styles/root.css">
+</head>
+
+<body data-tema="padrao" data-mode="light" onload="gerarInformacoes()">
+    <div class="alerta" id="div_alerta">
+        <div class="conteudoAlerta" id="conteudoAlerta"></div>
+    </div>
+
+    <div class="containerGeral">
+        <nav class="side-bar" id="navbar">
+            <ul>
+                <li onclick="sidebarFunction()">
+                    <i class='bx bx-menu-closer'></i>
+                </li>
+                <li>
+                    <a href="dashboard.html"><i class='bx bx-home'></i> <span id="home">Home</span></a>
+                </li>
+                <li>
+                    <a href="adicionarRegistros.html"><i class='bx bx-file-plus'></i> <span id="add">Adicionar
+                            Registros</span></a>
+                </li>
+                <li>
+                    <a href="registros.html"><i class='bx bx-address-book'></i> <span id="reg">Registros</span></a>
+                </li>
+                <li>
+                    <a href="agendaGastos.html"><i class='bx bx-calendar-event'></i> <span id="agenda">Agenda</span></a>
+                </li>
+                <li>
+                    <a href="caixinhas.html"><i class='bx bx-piggy-bank'></i><span id="caixinhas">Poupança</span></a>
+                </li>
+                <li>
+                    <a id="toggleTheme">
+                        <span id="icone"><i class='bx bx-moon'></i></span>
+                        <span id="tema">Tema</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="configurações.html"><i class='bx bx-cog'></i> <span id="config">Configurações</span></a>
+                </li>
+            </ul>
+        </nav>
+
+        <div id="main" class="main ar-page">
+
+            <div class="page-title-row">
+                <h1>Adicionar Registros</h1>
+                <div class="user-widget" id="userWidget">
+                    <div class="uw-info">
+                        <span class="uw-nome" id="uw_nome">Usuário</span>
+                        <div class="uw-xp-track">
+                            <div class="uw-xp-fill" id="uw_xp"></div>
+                            <span class="uw-lvl" id="uw_lvl">LVL 1</span>
+                        </div>
+                    </div>
+                    <div class="uw-avatar">
+                        <i class='bx bx-user' style="font-size:1.6rem; color:var(--cor-principal);"></i>
+                    </div>
+                    <div class="uw-dropdown" id="uwDropdown">
+                        <a href="meuPerfil.html" class="uw-dropdown-item">
+                            <i class='bx bx-user-circle'></i> Perfil
+                        </a>
+                        <a href="index.html" class="uw-dropdown-item">
+                            <i class='bx bx-arrow-back'></i> Voltar para seleção de usuário
+                        </a>
+                        <button class="uw-dropdown-item uw-logout-btn" id="btnLogout">
+                            <i class='bx bx-log-out'></i> LogOut
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="ar-tabs">
+                <button type="button" class="ar-tab ativo" id="tabUnico" onclick="trocarFormulario('addGasto')">Registro
+                    Único</button>
+                <button type="button" class="ar-tab" id="tabMultiplo"
+                    onclick="trocarFormulario('multiplosRegistros')">Múltiplos Registros</button>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════
+                 Card: Registro Único
+            ════════════════════════════════════════════════════ -->
+            <div class="ar-card" id="cardUnico">
+
+                <!-- Mascot -->
+                <div class="ar-mascot">
+                    <img class="ar-mascot-img" src="assets/gif/glaceon fofinha.gif" alt="Glaceon">
+                </div>
+
+                <!-- Form -->
+                <div class="ar-form-col" id="addGasto">
+                    <div class="formulario-adicionar-gasto">
+
+                        <!-- Título -->
+                        <div class="ar-field-wrap">
+                            <input type="text" id="ipt_nome" placeholder=" " required>
+                            <label for="ipt_nome">Título</label>
+                        </div>
+
+                        <!-- Tipo do Evento -->
+                        <div class="ar-field-wrap">
+                            <select id="select_tipo">
+                                <option value="#">Tipo do Evento</option>
+                                <option value="Gasto">Gasto</option>
+                                <option value="Recebimento">Recebimento</option>
+                                <option value="Transferencia">Transferência</option>
+                                <option value="Poupanca">Poupança</option>
+                                <option value="Emprestimo">Empréstimo</option>
+                            </select>
+                            <label for="select_tipo">Tipo do Evento</label>
+                        </div>
+
+                        <!-- Movimento -->
+                        <div class="ar-field-wrap">
+                            <select id="select_movimento" onchange="toggleParcelas('ipt_parcelas', this.value)">
+                                <option value="#">Movimento</option>
+                                <option value="Debito">Débito</option>
+                                <option value="Credito">Crédito</option>
+                                <option value="Dinheiro">Dinheiro</option>
+                                <option value="Pix">Pix</option>
+                                <option value="Boleto">Boleto</option>
+                                <option value="Voucher">Voucher</option>
+                            </select>
+                            <label for="select_movimento">Movimento</label>
+                        </div>
+
+                        <!-- Parcelas (oculto por padrão, aparece com Crédito/Boleto) -->
+                        <div class="ar-field-wrap ar-span-3" id="wrap_parcelas" style="display:none;">
+                            <input type="number" id="ipt_parcelas" placeholder=" " min="1" value="1" style="max-width:180px;">
+                            <label for="ipt_parcelas">Parcelas</label>
+                        </div>
+
+                        <!-- ── Evento Recorrente ── -->
+                        <div class="ar-span-3 ar-recurring-wrap">
+                            <div class="ar-recurring-toggle" onclick="toggleRecorrente()">
+                                <div class="ar-checkbox-btn" id="ar-recorrente-btn">
+                                    <i class='bx bx-check' id="ar-recorrente-icon" style="display:none; color:white; font-size:1rem;"></i>
+                                </div>
+                                <span>Evento recorrente</span>
+                                <i class='bx bx-refresh' style="color:var(--cor-principal); opacity:0.6;"></i>
+                                <span class="ar-recorrente-resumo" id="ar-recorrente-resumo" style="display:none;"></span>
+                            </div>
+
+                            <div id="recurring-options" style="display:none;" class="ar-recurring-body">
+                                <!-- Periodicidade -->
+                                <div class="ar-recurring-group">
+                                    <span class="ar-group-label">Periodicidade</span>
+                                    <div class="ar-pills">
+                                        <button type="button" class="ar-pill" data-period="diario"  onclick="setPeriodicity('diario')">Diário</button>
+                                        <button type="button" class="ar-pill" data-period="semanal" onclick="setPeriodicity('semanal')">Semanal</button>
+                                        <button type="button" class="ar-pill" data-period="mensal"  onclick="setPeriodicity('mensal')">Mensal</button>
+                                        <button type="button" class="ar-pill" data-period="anual"   onclick="setPeriodicity('anual')">Anual</button>
+                                    </div>
+                                </div>
+
+                                <!-- Semanal: dias da semana -->
+                                <div id="rec-semanal" class="ar-recurring-group" style="display:none;">
+                                    <span class="ar-group-label">Dias da semana</span>
+                                    <div class="ar-pills">
+                                        <button type="button" class="ar-pill" data-day="0" onclick="toggleWeekDay(0)">Dom</button>
+                                        <button type="button" class="ar-pill" data-day="1" onclick="toggleWeekDay(1)">Seg</button>
+                                        <button type="button" class="ar-pill" data-day="2" onclick="toggleWeekDay(2)">Ter</button>
+                                        <button type="button" class="ar-pill" data-day="3" onclick="toggleWeekDay(3)">Qua</button>
+                                        <button type="button" class="ar-pill" data-day="4" onclick="toggleWeekDay(4)">Qui</button>
+                                        <button type="button" class="ar-pill" data-day="5" onclick="toggleWeekDay(5)">Sex</button>
+                                        <button type="button" class="ar-pill" data-day="6" onclick="toggleWeekDay(6)">Sáb</button>
+                                    </div>
+                                </div>
+
+                                <!-- Mensal: dia do mês -->
+                                <div id="rec-mensal" class="ar-recurring-group" style="display:none;">
+                                    <span class="ar-group-label">Dia do mês</span>
+                                    <div class="ar-pills ar-daygrid" id="rec-mensal-days"></div>
+                                </div>
+
+                                <!-- Anual: mês + dia -->
+                                <div id="rec-anual" class="ar-recurring-group" style="display:none;">
+                                    <span class="ar-group-label">Mês do ano</span>
+                                    <div class="ar-pills" id="rec-anual-months"></div>
+                                    <span class="ar-group-label" style="margin-top:10px; display:block;">Dia</span>
+                                    <select id="rec-anual-day" class="ar-select-small">
+                                        <option value="">Selecionar dia</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Instituições (tag picker) ── -->
+                        <div class="ar-tag-field">
+                            <span class="ar-field-label">Instituições</span>
+                            <div class="ar-tp-container" id="ar-tp-inst">
+                                <div class="ar-tp-display" onclick="openTagPicker(event,'inst')">
+                                    <div class="ar-tp-tags" id="tp-tags-inst">
+                                        <span class="ar-tp-ph">Escolha instituições...</span>
+                                    </div>
+                                    <span class="ar-tp-arr">▾</span>
+                                </div>
+                                <div class="ar-tp-dd" id="tp-dd-inst" style="display:none;"></div>
+                            </div>
+                            <!-- Valores por instituição (aparece quando >1 selecionada) -->
+                            <div id="inst-amounts" class="ar-inst-amounts-wrap" style="display:none;">
+                                <p class="ar-inst-amounts-title">Valor por instituição</p>
+                            </div>
+                            <p id="saldo_display" style="display:none; font-size:0.85rem; font-weight:600; color:var(--cor-principal); margin:4px 0 0 2px;"></p>
+                        </div>
+
+                        <!-- ── Categorias (tag picker) ── -->
+                        <div class="ar-tag-field">
+                            <span class="ar-field-label">Categorias</span>
+                            <div class="ar-tp-container" id="ar-tp-cat">
+                                <div class="ar-tp-display" onclick="openTagPicker(event,'cat')">
+                                    <div class="ar-tp-tags" id="tp-tags-cat">
+                                        <span class="ar-tp-ph">Escolha categorias...</span>
+                                    </div>
+                                    <span class="ar-tp-arr">▾</span>
+                                </div>
+                                <div class="ar-tp-dd" id="tp-dd-cat" style="display:none;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Valor total (escondido quando múltiplas instituições com split) -->
+                        <div class="ar-field-wrap" id="wrap_valor">
+                            <input type="text" id="ipt_valor" placeholder=" " inputmode="numeric" required autocomplete="off">
+                            <label for="ipt_valor">Valor (R$)</label>
+                        </div>
+
+                        <!-- Descrição -->
+                        <div class="ar-field-wrap ar-span-2">
+                            <input type="text" id="ipt_desc" placeholder=" ">
+                            <label for="ipt_desc">Descrição</label>
+                        </div>
+
+                    </div><!-- /formulario-adicionar-gasto -->
+
+                    <div class="botao-formulario">
+                        <div>
+                            <p class="label-data">Quando foi?</p>
+                            <div class="ar-date-row" style="margin-top:8px;">
+                                <p class="ar-date-display hidden" id="data"></p>
+                                <button class="ar-btn secondary" id="calendario">
+                                    <i class='bx bx-calendar' style="margin-right:6px;"></i> Escolher data
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ar-btns-row">
+                            <button class="ar-btn" onclick="registrar()">Registrar</button>
+                        </div>
+                    </div>
+                </div><!-- /ar-form-col -->
+
+            </div><!-- /cardUnico -->
+
+            <!-- ═══════════════════════════════════════════════════
+                 Card: Múltiplos Registros
+            ════════════════════════════════════════════════════ -->
+            <div class="ar-card" id="multiplosRegistros" style="display:none; flex-direction:column; gap:24px;">
+
+                <!-- Data -->
+                <div>
+                    <p class="label-data">Quando foi?</p>
+                    <div class="ar-date-row" style="margin-top:8px;">
+                        <button class="ar-btn secondary" onclick="abrirCalendarioMulti()">
+                            <i class='bx bx-calendar' style="margin-right:6px;"></i> Escolher data
+                        </button>
+                        <p class="ar-date-display hidden" id="multi_data_label"></p>
+                    </div>
+                    <input type="hidden" id="multi_data">
+                </div>
+
+                <!-- Campos do lote -->
+                <div class="multi-form">
+                    <div class="ar-field-wrap field-default">
+                        <input type="text" id="ipt_multi_nome" placeholder=" ">
+                        <label for="ipt_multi_nome">Título</label>
+                    </div>
+
+                    <div class="ar-field-wrap field-default">
+                        <select id="multi_select_tipo">
+                            <option value="#">Tipo do Evento</option>
+                            <option value="Gasto">Gasto</option>
+                            <option value="Recebimento">Recebimento</option>
+                            <option value="Transferencia">Transferência</option>
+                            <option value="Poupanca">Poupança</option>
+                            <option value="Emprestimo">Empréstimo</option>
+                        </select>
+                        <label for="multi_select_tipo">Tipo do Evento</label>
+                    </div>
+
+                    <div class="ar-field-wrap field-default">
+                        <select id="multi_select_movimento" onchange="toggleParcelas('ipt_multi_parcelas', this.value)">
+                            <option value="#">Movimento</option>
+                            <option value="Debito">Débito</option>
+                            <option value="Credito">Crédito</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Pix">Pix</option>
+                            <option value="Boleto">Boleto</option>
+                            <option value="Voucher">Voucher</option>
+                        </select>
+                        <label for="multi_select_movimento">Movimento</label>
+                    </div>
+
+                    <div class="ar-field-wrap field-small" id="wrap_multi_parcelas">
+                        <input type="number" id="ipt_multi_parcelas" placeholder=" " min="1" value="1">
+                        <label for="ipt_multi_parcelas">Parcelas</label>
+                    </div>
+
+                    <!-- Instituições tag picker -->
+                    <div class="ar-tag-field field-default">
+                        <span class="ar-field-label">Instituições</span>
+                        <div class="ar-tp-container" id="ar-tp-m-inst">
+                            <div class="ar-tp-display" onclick="openTagPicker(event,'m-inst')">
+                                <div class="ar-tp-tags" id="tp-tags-m-inst">
+                                    <span class="ar-tp-ph">Escolha...</span>
+                                </div>
+                                <span class="ar-tp-arr">▾</span>
+                            </div>
+                            <div class="ar-tp-dd" id="tp-dd-m-inst" style="display:none;"></div>
+                        </div>
+                        <div id="m-inst-amounts" class="ar-inst-amounts-wrap" style="display:none;">
+                            <p class="ar-inst-amounts-title">Valor por instituição</p>
+                        </div>
+                    </div>
+
+                    <!-- Categorias tag picker -->
+                    <div class="ar-tag-field field-default">
+                        <span class="ar-field-label">Categorias</span>
+                        <div class="ar-tp-container" id="ar-tp-m-cat">
+                            <div class="ar-tp-display" onclick="openTagPicker(event,'m-cat')">
+                                <div class="ar-tp-tags" id="tp-tags-m-cat">
+                                    <span class="ar-tp-ph">Escolha...</span>
+                                </div>
+                                <span class="ar-tp-arr">▾</span>
+                            </div>
+                            <div class="ar-tp-dd" id="tp-dd-m-cat" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <div class="ar-field-wrap field-value" id="wrap_multi_valor">
+                        <input type="text" id="ipt_multi_valor" placeholder=" " inputmode="numeric" autocomplete="off">
+                        <label for="ipt_multi_valor">Valor (R$)</label>
+                    </div>
+
+                    <div class="ar-field-wrap field-description">
+                        <input type="text" id="ipt_multi_desc" placeholder=" ">
+                        <label for="ipt_multi_desc">Descrição</label>
+                    </div>
+
+                    <button class="ar-btn btn-add" onclick="adicionarAoLote()">
+                        Adicionar
+                    </button>
+                </div>
+
+                <!-- Tabela de registros -->
+                <div class="tabela-registro">
+                    <table class="ar-multi-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Tipo Evento</th>
+                                <th>Movimento</th>
+                                <th>Instituição</th>
+                                <th>Valor</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoLote">
+                            <tr id="loteVazio">
+                                <td colspan="6" class="ar-lote-vazio">Nenhum registro adicionado ainda.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <button class="ar-btn" onclick="salvarLote()" style="align-self:flex-start;">Salvar</button>
+
+            </div><!-- /multiplosRegistros -->
+
+            <!-- Calendário modal (compartilhado) -->
+            <div class="modal" id="modal">
+                <div class="conteudoModal">
+                    <span class="fechar" id="fechar">&times;</span>
+                    <div class="topo-calendario">
+                        <button id="btnAnterior">◀</button>
+                        <h2 id="mesAno"></h2>
+                        <button id="btnProximo">▶</button>
+                    </div>
+                    <div class="calendario">
+                        <div class="diasSemana">
+                            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span>
+                            <span>Qui</span><span>Sex</span><span>Sáb</span>
+                        </div>
+                        <div class="dias" id="dias"></div>
+                    </div>
+                    <div class="gastos" id="gastosDia"></div>
+                    <button id="confirmar" disabled>Confirmar dia</button>
+                </div>
+            </div>
+
+            <div id="modalAddValor" class="modal">
+                <div class="conteudoModal">
+                    <input type="number" id="ipt_valor_add">
+                    <label>Adicione um valor</label>
+                    <div>
+                        <button onclick="addValor.close()">Cancelar</button>
+                        <button onclick="adicionar()">Salvar</button>
+                    </div>
+                </div>
+            </div>
+
+            <dialog id="removeValor" class="modal">
+                <h1>Remover um valor</h1>
+                <input type="number" id="ipt_remove">
+                <select id="select_instituicao_remove"></select>
+                <br>
+                <div>
+                    <button onclick="removeValor.close()">Cancelar</button>
+                    <button onclick="remover()">Salvar</button>
+                </div>
+            </dialog>
+
+            <dialog id="consultaSaldo" class="modal">
+                <div class="principal" id="principal"></div>
+            </dialog>
+
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/adicionarRegistros.js"></script>
+</body>
+
+</html>

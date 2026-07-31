@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <link rel="icon" type="image/png" href="assets/glaceonIcon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário Financeiro</title>
+    <link href='assets/boxicons/boxicons.min.css' rel='stylesheet' id='bx-local'>
+    <script>
+        // Fallback: se icones locais nao carregarem, usa CDN
+        (function(){
+            function checkAndFallback(){
+                var el = document.createElement('i');
+                el.className = 'bx bx-check';
+                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:20px;visibility:hidden';
+                document.body.appendChild(el);
+                var ff = window.getComputedStyle(el).fontFamily || '';
+                document.body.removeChild(el);
+                if(ff.toLowerCase().indexOf('boxicons') === -1){
+                    var l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css';
+                    document.head.appendChild(l);
+                }
+            }
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', checkAndFallback);
+            } else { checkAndFallback(); }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles/Estilos.css">
+    <link rel="stylesheet" href="styles/gastos.css">
+    <link rel="stylesheet" href="styles/root.css">
+</head>
+
+<body data-tema="padrao" data-mode="light">
+    <div class="containerGeral">
+        <nav class="side-bar" id="navbar">
+            <ul>
+                <li onclick="sidebarFunction()">
+                    <i class='bx bx-menu-closer'></i>
+                </li>
+                <li>
+                    <a href="dashboard.html"><i class='bx bx-home'></i> <span id="home">Home</span></a>
+                </li>
+                <li>
+                    <a href="registros.html"><i class='bx bx-address-book'></i> <span id="reg">Registros</span></a>
+                </li>
+                <li>
+                    <a href="adicionarRegistros.html"><i class='bx bx-file-plus'></i> <span id="add">Adicionar
+                            Registros</span></a>
+                </li>
+                <li>
+                    <a href="agendaGastos.html"><i class='bx bx-calendar-event'></i> <span id="agenda">Agenda</span></a>
+                </li>
+                <li>
+                    <a href="caixinhas.html"><i class='bx bx-piggy-bank'></i><span id="caixinhas">Poupança</span></a>
+                </li>
+                <li>
+                    <a id="toggleTheme">
+                        <span id="icone"><i class='bx bx-moon'></i></span>
+                        <span id="tema">Tema</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="configurações.html"><i class='bx bx-cog'></i> <span id="config">Configurações</span></a>
+                </li>
+            </ul>
+        </nav>
+
+        <main id="main" class="main ag-page">
+
+            <div class="page-title-row">
+                <h1>Calendário Financeiro</h1>
+                <!-- User widget -->
+                <div class="user-widget" id="userWidget">
+                    <div class="uw-info">
+                        <span class="uw-nome" id="uw_nome">Usuário</span>
+                        <div class="uw-xp-track">
+                            <div class="uw-xp-fill" id="uw_xp"></div>
+                            <span class="uw-lvl" id="uw_lvl">LVL 1</span>
+                        </div>
+                    </div>
+                    <div class="uw-avatar">
+                        <i class='bx bx-user' style="font-size:1.6rem; color:var(--cor-principal);"></i>
+                    </div>
+                    <div class="uw-dropdown" id="uwDropdown">
+                        <a href="meuPerfil.html" class="uw-dropdown-item">
+                            <i class='bx bx-user-circle'></i> Perfil
+                        </a>
+                        <a href="index.html" class="uw-dropdown-item">
+                            <i class='bx bx-arrow-back'></i> Voltar para seleção de usuário
+                        </a>
+                        <button class="uw-dropdown-item uw-logout-btn" id="btnLogout">
+                            <i class='bx bx-log-out'></i> LogOut
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ag-layout">
+                <!-- Calendar -->
+                <div class="ag-cal-panel">
+                    <div class="ag-month-nav">
+                        <button class="ag-nav-btn" id="btnPrevMes"><i class='bx bx-chevron-left'></i></button>
+                        <span class="ag-month-name" id="mesNome"></span>
+                        <button class="ag-nav-btn" id="btnNextMes"><i class='bx bx-chevron-right'></i></button>
+                    </div>
+
+                    <div class="ag-weekdays">
+                        <div class="ag-weekday">D</div>
+                        <div class="ag-weekday">S</div>
+                        <div class="ag-weekday">T</div>
+                        <div class="ag-weekday">Q</div>
+                        <div class="ag-weekday">Q</div>
+                        <div class="ag-weekday">S</div>
+                        <div class="ag-weekday">S</div>
+                    </div>
+
+                    <div class="ag-grid" id="calGrid"></div>
+                </div>
+
+                <!-- Summary (visão mensal) -->
+                <div class="ag-resumo" id="resumoPanel">
+                    <div class="ag-resumo-titulo">Resumo:</div>
+                    <p class="ag-resumo-empty" id="resumoEmpty">Selecione um dia para ver os eventos.</p>
+                    <div id="resumoConteudo"></div>
+                </div>
+            </div>
+
+            <!-- ═══ MODAL: Detalhes do dia ═══ -->
+            <div class="ag-dia-modal-overlay" id="agDiaModalOverlay" onclick="fecharModalDia(event)">
+                <div class="ag-dia-modal" id="agDiaModal">
+                    <div class="ag-dia-modal-header">
+                        <h2 id="agDiaModalTitulo">Eventos do dia</h2>
+                        <button class="ag-dia-modal-close" onclick="fecharModalDia()"><i class='bx bx-x'></i></button>
+                    </div>
+                    <div class="ag-dia-modal-body" id="agDiaModalBody">
+                        <!-- Preenchido via JS -->
+                    </div>
+                    <div class="ag-dia-modal-footer">
+                        <div class="ag-dia-total-linha">
+                            <span>Saldo do dia</span>
+                            <span id="agDiaSaldo" class="ag-dia-saldo-valor">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <!-- <footer>
+            <div class="footer-conteudo">
+                <div class="footer-desenvolvedores">
+                    <p>
+                        <strong>Desenvolvido Por:</strong> <br>
+                        Celina dos Santos Benedito <br>
+                        Isaak Guilherme Menezes <br>
+                        Leticia da Silva Santos</p>
+                </div>
+                <div>
+                    <p>
+                    <strong>Idealizado Por:</strong><br>
+                    Celina dos Santos Benedito
+                    </p>
+                </div>
+                <div>
+                    <p>Celina dos Santos Benedito</p>
+                </div>
+                <div>
+                    <p>Isaak Guilheme Menezes</p>
+                </div>
+                <div>
+                    <p>Leticia da Silva Santos</p>
+                </div>
+            </div>
+        </footer> -->
+    </div>
+</body>
+
+</html>
+<script src="js/main.js"></script>
+<script src="js/navbar.js"></script>
+<script src="js/agendaGastos.js"></script>

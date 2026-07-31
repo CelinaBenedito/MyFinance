@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <link rel="icon" type="image/png" href="assets/glaceonIcon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poupança · Caixinhas</title>
+    <link href='assets/boxicons/boxicons.min.css' rel='stylesheet' id='bx-local'>
+    <script>
+        (function(){
+            function checkAndFallback(){
+                var el = document.createElement('i');
+                el.className = 'bx bx-check';
+                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:20px;visibility:hidden';
+                document.body.appendChild(el);
+                var ff = window.getComputedStyle(el).fontFamily || '';
+                document.body.removeChild(el);
+                if(ff.toLowerCase().indexOf('boxicons') === -1){
+                    var l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css';
+                    document.head.appendChild(l);
+                }
+            }
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', checkAndFallback);
+            } else { checkAndFallback(); }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles/Estilos.css">
+    <link rel="stylesheet" href="styles/root.css">
+    <link rel="stylesheet" href="styles/caixinhas.css">
+</head>
+
+<body data-tema="padrao" data-mode="light" onload="iniciarPagina()">
+    <div class="containerGeral">
+
+        <!-- ══════════════════ NAVBAR ══════════════════ -->
+        <nav class="side-bar" id="navbar">
+            <ul>
+                <li onclick="sidebarFunction()">
+                    <i class='bx bx-menu-closer'></i>
+                </li>
+                <li>
+                    <a href="dashboard.html"><i class='bx bx-home'></i><span id="home">Home</span></a>
+                </li>
+                <li>
+                    <a href="registros.html"><i class='bx bx-address-book'></i><span id="reg"> Registros </span></a>
+                </li>
+                <li>
+                    <a href="adicionarRegistros.html"><i class='bx bx-file-plus'></i><span id="add">Adicionar Registros</span></a>
+                </li>
+                <li>
+                    <a href="agendaGastos.html"><i class='bx bx-calendar-event'></i><span id="agenda">Agenda</span></a>
+                </li>
+                <li>
+                    <a href="caixinhas.html"><i class='bx bx-piggy-bank'></i><span id="caixinhas">Poupança</span></a>
+                </li>
+                <li>
+                    <a id="toggleTheme">
+                        <span id="icone"><i class='bx bx-moon'></i></span>
+                        <span id="tema">Tema</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="configurações.html"><i class='bx bx-cog'></i><span id="config">Configurações</span></a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- ══════════════════ MAIN ══════════════════ -->
+        <div id="main" class="main">
+
+            <!-- Cabeçalho -->
+            <div class="page-title-row">
+                <div class="cxh-page-header" style="width:100%;">
+                    <div class="cxh-header-left">
+                        <h1>Caixinhas</h1>
+                        <span class="cxh-header-subtitle">Suas metas de poupança com rendimento automático</span>
+                    </div>
+                    <button class="btn-nova-caixinha" onclick="abrirModalCriar()">
+                        <i class='bx bx-plus'></i> Nova Caixinha
+                    </button>
+                </div>
+                <div class="top-actions">
+                    <div class="user-widget" id="userWidget">
+                        <div class="uw-info">
+                            <span class="uw-nome" id="uw_nome">Usuário</span>
+                            <div class="uw-xp-track">
+                                <div class="uw-xp-fill" id="uw_xp"></div>
+                                <span class="uw-lvl" id="uw_lvl">LVL 1</span>
+                            </div>
+                        </div>
+                        <div class="uw-avatar">
+                            <i class='bx bx-user' style="font-size:1.6rem; color:var(--cor-principal);"></i>
+                        </div>
+                        <div class="uw-dropdown" id="uwDropdown">
+                            <a href="meuPerfil.html" class="uw-dropdown-item">
+                                <i class='bx bx-user-circle'></i> Perfil
+                            </a>
+                            <a href="index.html" class="uw-dropdown-item">
+                                <i class='bx bx-arrow-back'></i> Voltar para seleção de usuário
+                            </a>
+                            <button class="uw-dropdown-item uw-logout-btn" id="btnLogout">
+                                <i class='bx bx-log-out'></i> LogOut
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="cxh-kpi-grid" id="cxhKpiGrid">
+                <!-- KPI 1: Total Acumulado -->
+                <div class="cxh-kpi-card">
+                    <div class="cxh-kpi-head">
+                        <span class="cxh-kpi-label">Total Acumulado</span>
+                        <span class="cxh-kpi-icon"><i class='bx bx-dollar-circle'></i></span>
+                    </div>
+                    <span class="cxh-kpi-valor" id="kpiTotalAcumulado">–</span>
+                    <span class="cxh-kpi-sub" id="kpiQtdAtivas">– caixinhas ativas</span>
+                </div>
+
+                <!-- KPI 2: Progresso Geral -->
+                <div class="cxh-kpi-card">
+                    <div class="cxh-kpi-head">
+                        <span class="cxh-kpi-label">Progresso Geral</span>
+                        <span class="cxh-kpi-icon"><i class='bx bx-target-lock'></i></span>
+                    </div>
+                    <span class="cxh-kpi-valor" id="kpiProgressoPct">–</span>
+                    <span class="cxh-kpi-sub" id="kpiProgressoSub">da meta total</span>
+                </div>
+
+                <!-- KPI 3: Rendimento Estimado / Mês -->
+                <div class="cxh-kpi-card">
+                    <div class="cxh-kpi-head">
+                        <span class="cxh-kpi-label">Rendimento Est./Mês</span>
+                        <span class="cxh-kpi-icon"><i class='bx bx-trending-up'></i></span>
+                    </div>
+                    <span class="cxh-kpi-valor" id="kpiRendimento">–</span>
+                    <span class="cxh-kpi-sub">estimado este mês</span>
+                </div>
+
+                <!-- KPI 4: Status -->
+                <div class="cxh-kpi-card">
+                    <div class="cxh-kpi-head">
+                        <span class="cxh-kpi-label">Status</span>
+                        <span class="cxh-kpi-icon"><i class='bx bx-layer'></i></span>
+                    </div>
+                    <span class="cxh-kpi-valor" id="kpiStatusAtivas">–</span>
+                    <span class="cxh-kpi-sub" id="kpiStatusSub">– encerradas</span>
+                </div>
+            </div>
+
+            <!-- Barra de progresso consolidada -->
+            <div class="cxh-progresso-card" id="cxhProgressoCard">
+                <div class="cxh-progresso-header">
+                    <span class="cxh-progresso-label"><i class='bx bx-bar-chart-alt-2'></i> Progresso Consolidado das Metas</span>
+                    <span class="cxh-progresso-pct" id="cxhProgressoPctBar">0%</span>
+                </div>
+                <div class="cxh-progress-track">
+                    <div class="cxh-progress-fill" id="cxhProgressoFill" style="width:0%"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--cor-texto-secundario);margin-top:6px;">
+                    <span id="cxhProgressoValAtual">R$ 0,00 acumulados</span>
+                    <span id="cxhProgressoValMeta">Meta: R$ 0,00</span>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="cxh-filtros">
+                <button class="cxh-filtro-btn ativo" data-filtro="ativas" onclick="trocarFiltro('ativas', this)">
+                    <i class='bx bx-check-circle'></i> Ativas
+                </button>
+                <button class="cxh-filtro-btn" data-filtro="encerradas" onclick="trocarFiltro('encerradas', this)">
+                    <i class='bx bx-lock'></i> Encerradas
+                </button>
+                <button class="cxh-filtro-btn" data-filtro="todas" onclick="trocarFiltro('todas', this)">
+                    <i class='bx bx-list-ul'></i> Todas
+                </button>
+            </div>
+
+            <!-- Loading -->
+            <div class="cxh-loading" id="cxhLoading">
+                <i class='bx bx-loader-alt bx-spin'></i> Carregando caixinhas...
+            </div>
+
+            <!-- Grid de cards -->
+            <div class="cxh-grid" id="cxhGrid" style="display:none;"></div>
+
+            <!-- Estado vazio -->
+            <div class="cxh-vazio" id="cxhVazio" style="display:none;">
+                <i class='bx bx-piggy-bank'></i>
+                <h3>Nenhuma caixinha encontrada</h3>
+                <p>Crie sua primeira caixinha de poupança e comece a realizar seus objetivos!</p>
+                <button class="btn-nova-caixinha" onclick="abrirModalCriar()">
+                    <i class='bx bx-plus'></i> Criar Caixinha
+                </button>
+            </div>
+
+            <!-- Insight -->
+            <div class="cxh-insight" id="cxhInsight" style="display:none;">
+                <i class='bx bx-bulb'></i>
+                <span id="cxhInsightTexto"></span>
+            </div>
+
+        </div><!-- /main -->
+    </div><!-- /containerGeral -->
+
+    <!-- ════════════════════════════════════════════════════════
+         MODAL: CRIAR / EDITAR CAIXINHA
+    ════════════════════════════════════════════════════════ -->
+    <div class="cxh-modal-overlay" id="modalCriarOverlay" onclick="fecharModalCriarOutside(event)">
+        <div class="cxh-modal cxh-modal-lg" id="modalCriar">
+
+            <div class="cxh-modal-header">
+                <h2 id="modalCriarTitulo"><i class='bx bx-plus-circle'></i> Nova Caixinha</h2>
+                <button class="cxh-modal-close" onclick="fecharModalCriar()"><i class='bx bx-x'></i></button>
+            </div>
+
+            <div class="cxh-modal-body">
+
+                <!-- SEÇÃO 1: Identificação -->
+                <div>
+                    <p class="cxh-secao-titulo"><i class='bx bx-id-card'></i> Identificação</p>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div class="cxh-campo-wrap">
+                            <label class="cxh-campo-label">Nome da Caixinha *</label>
+                            <input type="text" id="inputNome" class="cxh-campo-input" placeholder="Ex: Viagem Japão" oninput="validarBotaoSalvar()" maxlength="80" />
+                        </div>
+                        <div class="cxh-campo-wrap">
+                            <label class="cxh-campo-label">Descrição (opcional)</label>
+                            <input type="text" id="inputDescricao" class="cxh-campo-input" placeholder="Detalhes sobre o objetivo" maxlength="200" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO 2: Meta Financeira -->
+                <div>
+                    <p class="cxh-secao-titulo"><i class='bx bx-target-lock'></i> Meta Financeira</p>
+                    <div class="cxh-campo-row">
+                        <div class="cxh-campo-wrap">
+                            <label class="cxh-campo-label">Valor da Meta *</label>
+                            <input type="text" id="inputValorMeta" class="cxh-campo-input" placeholder="R$ 0,00" />
+                        </div>
+                        <div class="cxh-campo-wrap">
+                            <label class="cxh-campo-label">Prazo (dd/mm/aaaa)</label>
+                            <input type="text" id="inputDataPrazo" class="cxh-campo-input" placeholder="dd/mm/aaaa" maxlength="10" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO 3: Tipo de Rendimento -->
+                <div>
+                    <p class="cxh-secao-titulo"><i class='bx bx-trending-up'></i> Tipo de Rendimento</p>
+
+                    <!-- Botões de seleção de tipo -->
+                    <div class="cxh-rendimento-btns" id="rendBtns">
+                        <button type="button" class="cxh-rend-btn" data-tipo="CDI"          onclick="selecionarTipoRendimento('CDI')">CDI</button>
+                        <button type="button" class="cxh-rend-btn" data-tipo="SELIC"         onclick="selecionarTipoRendimento('SELIC')">SELIC</button>
+                        <button type="button" class="cxh-rend-btn" data-tipo="POUPANCA"      onclick="selecionarTipoRendimento('POUPANCA')">Poupança</button>
+                        <button type="button" class="cxh-rend-btn" data-tipo="PREFIXADO"     onclick="selecionarTipoRendimento('PREFIXADO')">Prefixado</button>
+                        <button type="button" class="cxh-rend-btn" data-tipo="PERSONALIZADO" onclick="selecionarTipoRendimento('PERSONALIZADO')">Personalizado</button>
+                    </div>
+
+                    <!-- Campos CDI / SELIC -->
+                    <div class="cxh-rend-campos" id="camposCdiSelic">
+                        <div class="cxh-campo-row">
+                            <div class="cxh-campo-wrap">
+                                <label class="cxh-campo-label" id="labelPctCdi">% do CDI</label>
+                                <input type="number" id="inputPctRendimento" class="cxh-campo-input" placeholder="Ex: 100" min="0" max="200" step="0.1" oninput="calcularTaxaEfetiva()" />
+                            </div>
+                            <div class="cxh-campo-wrap">
+                                <label class="cxh-campo-label" id="labelTaxaRef">Taxa CDI atual (% a.a.)</label>
+                                <input type="number" id="inputTaxaRef" class="cxh-campo-input" placeholder="Ex: 10.40" step="0.01" min="0" oninput="calcularTaxaEfetiva()" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campos POUPANCA -->
+                    <div class="cxh-rend-campos" id="camposPoupanca">
+                        <div class="cxh-campo-wrap">
+                            <label class="cxh-campo-label">Taxa SELIC atual (% a.a.)</label>
+                            <input type="number" id="inputTaxaRefPoupanca" class="cxh-campo-input" placeholder="Ex: 10.75" step="0.01" min="0" oninput="calcularTaxaEfetiva()" />
+                        </div>
+                    </div>
+
+                    <!-- Campos PREFIXADO / PERSONALIZADO -->
+                    <div class="cxh-rend-campos" id="camposPrefixado">
+                        <div class="cxh-campo-wrap">
+                            <label class="cxh-campo-label">Taxa anual (% a.a.)</label>
+                            <input type="number" id="inputTaxaAnual" class="cxh-campo-input" placeholder="Ex: 12.5" step="0.01" min="0" oninput="calcularTaxaEfetiva()" />
+                        </div>
+                    </div>
+
+                    <!-- Resumo taxa efetiva -->
+                    <div class="cxh-taxa-resumo" id="taxaResumo" style="display:none;">
+                        <i class='bx bx-info-circle'></i>
+                        <span id="taxaResumoTexto">–</span>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO 4: Instituições -->
+                <div>
+                    <p class="cxh-secao-titulo"><i class='bx bx-buildings'></i> Instituições *</p>
+                    <div class="cxh-inst-grid" id="instGrid">
+                        <span style="font-size:0.82rem;color:var(--cor-texto-secundario);">Carregando instituições...</span>
+                    </div>
+                    <p id="instAviso" style="font-size:0.75rem;color:var(--red-700);margin-top:6px;display:none;">
+                        Selecione ao menos uma instituição.
+                    </p>
+                </div>
+
+            </div><!-- /modal-body -->
+
+            <div class="cxh-modal-footer">
+                <button class="btn-cxh-cancelar" onclick="fecharModalCriar()">
+                    <i class='bx bx-x'></i> Cancelar
+                </button>
+                <button class="btn-cxh-salvar" id="btnSalvarCaixinha" onclick="salvarCaixinha()" disabled>
+                    <i class='bx bx-save'></i> Salvar
+                </button>
+            </div>
+
+        </div><!-- /modal -->
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         MODAL: DETALHES DA CAIXINHA
+    ════════════════════════════════════════════════════════ -->
+    <div class="cxh-modal-overlay" id="modalDetOverlay" onclick="fecharModalDetOutside(event)">
+        <div class="cxh-modal cxh-modal-lg" id="modalDet">
+
+            <div class="cxh-modal-header">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <h2 id="detNome">–</h2>
+                    <span id="detBadge" class="cxh-badge"></span>
+                    <span id="detStatusBadge"></span>
+                </div>
+                <button class="cxh-modal-close" onclick="fecharModalDet()"><i class='bx bx-x'></i></button>
+            </div>
+
+            <div class="cxh-modal-body">
+
+                <!-- Descrição -->
+                <p id="detDesc" style="font-size:0.85rem;color:var(--cor-texto-secundario);"></p>
+
+                <!-- Stats grid -->
+                <div class="cxh-det-grid">
+                    <div class="cxh-det-stat">
+                        <span class="cxh-det-stat-label">Valor Atual</span>
+                        <span class="cxh-det-stat-val positivo" id="detValorAtual">–</span>
+                    </div>
+                    <div class="cxh-det-stat">
+                        <span class="cxh-det-stat-label">Meta</span>
+                        <span class="cxh-det-stat-val" id="detMeta">–</span>
+                    </div>
+                    <div class="cxh-det-stat">
+                        <span class="cxh-det-stat-label">Falta para Meta</span>
+                        <span class="cxh-det-stat-val negativo" id="detFalta">–</span>
+                    </div>
+                    <div class="cxh-det-stat">
+                        <span class="cxh-det-stat-label">% Atingido</span>
+                        <span class="cxh-det-stat-val" id="detPct">–</span>
+                    </div>
+                    <div class="cxh-det-stat">
+                        <span class="cxh-det-stat-label">Meses Restantes</span>
+                        <span class="cxh-det-stat-val" id="detMeses">–</span>
+                    </div>
+                    <div class="cxh-det-stat">
+                        <span class="cxh-det-stat-label">Prazo</span>
+                        <span class="cxh-det-stat-val" id="detPrazo">–</span>
+                    </div>
+                    <div class="cxh-det-stat">
+                        <span class="cxh-det-stat-label">Aporte Mensal Sugerido</span>
+                        <span class="cxh-det-stat-val" id="detAporte">–</span>
+                    </div>
+                    <div class="cxh-det-stat">
+                        <span class="cxh-det-stat-label">Taxa Mensal Efetiva</span>
+                        <span class="cxh-det-stat-val" id="detTaxaMensal">–</span>
+                    </div>
+                </div>
+
+                <!-- Barra de progresso -->
+                <div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span style="font-size:0.78rem;font-weight:600;color:var(--cor-texto-secundario);">Progresso</span>
+                        <span style="font-size:0.78rem;font-weight:700;color:var(--cor-titulo);" id="detPctBar">0%</span>
+                    </div>
+                    <div class="cxh-progress-track">
+                        <div class="cxh-progress-fill" id="detProgressoFill" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <!-- Meta Alcançável -->
+                <div id="detAlcancavel"></div>
+
+                <!-- Projeção -->
+                <div>
+                    <p class="cxh-secao-titulo"><i class='bx bx-line-chart'></i> Projeção</p>
+                    <div class="cxh-det-projecao" id="detProjecao">–</div>
+                </div>
+
+                <!-- Instituições vinculadas -->
+                <div id="detInstSection">
+                    <p class="cxh-secao-titulo"><i class='bx bx-buildings'></i> Instituições Vinculadas</p>
+                    <div class="cxh-det-inst-lista" id="detInstLista"></div>
+                </div>
+
+            </div><!-- /modal-body -->
+
+            <div class="cxh-modal-footer" id="detFooterNormal">
+                <button class="btn-cxh-deletar"   id="btnDetDeletar"   onclick="pedirConfirmacaoDeletar()">
+                    <i class='bx bx-trash'></i> Deletar
+                </button>
+                <button class="btn-cxh-encerrar"  id="btnDetEncerrar"  onclick="pedirConfirmacaoEncerrar()">
+                    <i class='bx bx-lock'></i> Encerrar
+                </button>
+                <button class="btn-cxh-reabrir"   id="btnDetReabrir"   onclick="pedirConfirmacaoReabrir()" style="display:none;">
+                    <i class='bx bx-lock-open'></i> Reabrir
+                </button>
+                <button class="btn-cxh-editar"    id="btnDetEditar"    onclick="editarCaixinhaAtual()">
+                    <i class='bx bx-edit'></i> Editar
+                </button>
+            </div>
+            <!-- Footer de confirmação (aparece ao clicar Encerrar ou Deletar) -->
+            <div class="cxh-modal-footer cxh-footer-confirmacao" id="detFooterConfirmacao" style="display:none;">
+                <span id="detConfirmacaoTexto" style="font-size:0.85rem;color:var(--cor-texto-principal);flex:1;"></span>
+                <button class="btn-cxh-cancelar" onclick="cancelarConfirmacao()">
+                    <i class='bx bx-x'></i> Cancelar
+                </button>
+                <button class="btn-cxh-confirmar-acao" id="btnConfirmarAcao" onclick="">
+                    <i class='bx bx-check'></i> Confirmar
+                </button>
+            </div>
+
+        </div><!-- /modal -->
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/caixinhas.js"></script>
+    <script src="js/navbar.js"></script>
+</body>
+
+</html>
+

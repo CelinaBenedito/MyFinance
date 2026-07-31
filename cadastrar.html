@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar</title>
+    <link rel="stylesheet" href="styles/Estilos.css">
+</head>
+
+<body data-tema="padrao" data-mode="light">
+    <div class="alerta" id="div_alerta">
+        <div class="conteudoAlerta" id="conteudoAlerta">
+
+        </div>
+    </div>
+    
+    <div class="containerGeral">
+        <div class="main" id="main main-formulario">
+            <div class="containerCadastro">
+               
+                <div class="card-formulario">
+                    <div class="campo full">
+                         <h1>Cadastrar-se</h1>
+                    </div>
+                    <div class="campo">
+                        <input placeholder="" type="text" id="ipt_nome" required>
+                        <label>Nome</label>
+                    </div>
+                    <div class="campo">
+                        <input placeholder=" " type="text" id="ipt_sobrenome" required>
+                        <label>Sobrenome</label>
+                    </div>
+                    <div class="campo">
+                        <input placeholder=" " id="ipt_dataNascimento" type="text" maxlength="10" inputmode="numeric" required>
+                        <label>Data de Nascimento</label>
+                    </div>
+                    <div class="campo">
+                        <select id="select_sexo">
+                            <option value="#">Selecione o sexo</option>
+                            <option value="Feminino">Feminino</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Não">Prefiro não identificar</option>
+                        </select>
+                    </div>
+                    <div class="campo full">
+                        <input placeholder=" " type="email" id="ipt_email" required>
+                        <label>Email</label>
+                    </div>
+                    <div class="campo full">
+                        <input type="text" id="ipt_senha" placeholder=" " required>
+                        <label>Senha</label>
+                    </div>
+                    <div class="campo full">
+                        <input type="text" id="ipt_ConfSenha" placeholder=" " required>
+                        <label>Confirmar senha</label>
+                    </div>
+                    <div class="campo full">
+                        <button onclick="checarDados()">Cadastrar</button>
+                    </div>
+                    <div class="campo full">
+                        <p>Já tem um cadastro? <a href="login.html">Login</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+    <script src="js/cadastrar.js"></script>
+</body>
+</html>

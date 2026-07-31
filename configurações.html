@@ -1,0 +1,374 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <link rel="icon" type="image/png" href="assets/glaceonIcon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações</title>
+    <link href='assets/boxicons/boxicons.min.css' rel='stylesheet' id='bx-local'>
+    <script>
+        // Fallback: se icones locais nao carregarem, usa CDN
+        (function(){
+            function checkAndFallback(){
+                var el = document.createElement('i');
+                el.className = 'bx bx-check';
+                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:20px;visibility:hidden';
+                document.body.appendChild(el);
+                var ff = window.getComputedStyle(el).fontFamily || '';
+                document.body.removeChild(el);
+                if(ff.toLowerCase().indexOf('boxicons') === -1){
+                    var l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css';
+                    document.head.appendChild(l);
+                }
+            }
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', checkAndFallback);
+            } else { checkAndFallback(); }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles/Estilos.css">
+    <link rel="stylesheet" href="styles/configuracao.css">
+    <link rel="stylesheet" href="styles/root.css">
+</head>
+
+<body data-tema="padrao" data-mode="light">
+    <div class="alerta" id="div_alerta" style="display:none;">
+        <div class="conteudoAlerta" id="conteudoAlerta"></div>
+    </div>
+
+    <!-- Modal personalizar mês fiscal -->
+    <div id="modalMesFiscalDia" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center;">
+        <div class="cfg-card" style="max-width:420px; width:90%; gap:20px;">
+            <h2 style="font-size:1.4rem; margin:0;">Personalizar Mês Fiscal</h2>
+            <p style="color:var(--cor-texto-secundario); font-size:0.92rem; margin:0;">Digite o dia do mês em que o período fiscal inicia (1 a 31).</p>
+            <div class="cfg-field">
+                <input type="number" id="ipt_dia_fiscal" placeholder=" " min="1" max="31" step="1">
+                <label for="ipt_dia_fiscal">Dia de início (1–31)</label>
+            </div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <button class="cfg-btn" onclick="salvarDiaFiscalPersonalizado()">Salvar</button>
+                <button class="cfg-btn" style="background:transparent;border:2px solid var(--cor-principal);color:var(--cor-principal);" onclick="fecharModalMesFiscalDia()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal personalizada -->
+    <div id="modalPersonalizada" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center;">
+        <div class="cfg-card" style="max-width:440px; width:90%; gap:20px;">
+            <h2 id="modalPersonalizadaTitulo" style="font-size:1.4rem;">Novo item personalizado</h2>
+            <div class="cfg-field">
+                <input type="text" id="ipt_personalizada" placeholder=" ">
+                <label id="modalPersonalizadaLabel" for="ipt_personalizada">Nome</label>
+            </div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <button class="cfg-btn" onclick="salvarPersonalizada()">Salvar</button>
+                <button class="cfg-btn" style="background:transparent;border:2px solid var(--cor-principal);color:var(--cor-principal);" onclick="fecharPersonalizada()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal limite por instituição/categoria -->
+    <div id="modalLimite" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center;">
+        <div class="cfg-card" style="max-width:500px; width:92%; gap:20px;">
+            <h2 id="modalLimiteTitulo" style="font-size:1.4rem; margin:0;">Definir limite</h2>
+
+            <div class="cfg-field">
+                <select id="selLimiteItem" required>
+                    <option value="" disabled selected></option>
+                </select>
+                <label id="lblLimiteItem" for="selLimiteItem">Selecionar item</label>
+            </div>
+
+            <div class="cfg-field">
+                <input type="number" id="ipt_limite_modal_valor" placeholder=" " step="0.01" min="0">
+                <label for="ipt_limite_modal_valor">Limite mensal (R$)</label>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <button class="cfg-btn" onclick="salvarLimiteModal()">Salvar limite</button>
+                <button class="cfg-btn" style="background:transparent;border:2px solid var(--cor-principal);color:var(--cor-principal);" onclick="fecharModalLimite()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    <div class="containerGeral">
+        <nav class="side-bar" id="navbar">
+            <ul>
+                <li onclick="sidebarFunction()">
+                    <i class='bx bx-menu-closer'></i>
+                </li>
+                <li>
+                    <a href="dashboard.html"><i class='bx bx-home'></i> <span id="home">Home</span></a>
+                </li>
+                <li>
+                    <a href="adicionarRegistros.html"><i class='bx bx-file-plus'></i> <span id="add">Adicionar Registros</span></a>
+                </li>
+                <li>
+                    <a href="registros.html"><i class='bx bx-address-book'></i> <span id="reg">Registros</span></a>
+                </li>
+                <li>
+                    <a href="agendaGastos.html"><i class='bx bx-calendar-event'></i> <span id="agenda">Agenda</span></a>
+                </li>
+                <li>
+                    <a href="caixinhas.html"><i class='bx bx-piggy-bank'></i><span id="caixinhas">Poupança</span></a>
+                </li>
+                <li>
+                    <a id="toggleTheme">
+                        <span id="icone"><i class='bx bx-moon'></i></span>
+                        <span id="tema">Tema</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="configurações.html"><i class='bx bx-cog'></i> <span id="config">Configurações</span></a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="containerGeral">
+            <main id="main" class="main cfg-page">
+
+                <div class="page-title-row">
+                    <h1>Configurações</h1>
+                    <!-- User widget -->
+                    <div class="user-widget" id="userWidget">
+                        <div class="uw-info">
+                            <span class="uw-nome" id="uw_nome">Usuário</span>
+                            <div class="uw-xp-track">
+                                <div class="uw-xp-fill" id="uw_xp"></div>
+                                <span class="uw-lvl" id="uw_lvl">LVL 1</span>
+                            </div>
+                        </div>
+                        <div class="uw-avatar">
+                            <i class='bx bx-user' style="font-size:1.6rem; color:var(--cor-principal);"></i>
+                        </div>
+                        <div class="uw-dropdown" id="uwDropdown">
+                            <a href="meuPerfil.html" class="uw-dropdown-item">
+                                <i class='bx bx-user-circle'></i> Perfil
+                            </a>
+                            <a href="index.html" class="uw-dropdown-item">
+                                <i class='bx bx-arrow-back'></i> Voltar para seleção de usuário
+                            </a>
+                            <button class="uw-dropdown-item uw-logout-btn" id="btnLogout">
+                                <i class='bx bx-log-out'></i> LogOut
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MÊS FISCAL -->
+                <div class="cfg-card">
+                    <h2><i class='bx bx-calendar' style="color:var(--cor-principal);font-size:1.6rem;"></i> Mês Fiscal</h2>
+
+                    <div class="cfg-row" style="align-items:flex-end; gap:10px; flex-wrap:wrap;">
+                        <div class="cfg-field" style="max-width:280px;">
+                            <select id="mesFiscal" required>
+                                <option value="" disabled selected></option>
+                                <option value="1">Dia 1</option>
+                                <option value="5">Dia 5</option>
+                                <option value="10">Dia 10</option>
+                                <option value="15">Dia 15</option>
+                            </select>
+                            <label for="mesFiscal">Início do mês fiscal</label>
+                        </div>
+                        <button class="cfg-btn" type="button" onclick="abrirModalMesFiscalDia()" style="margin-bottom:2px; white-space:nowrap;">Personalizar</button>
+                        <div class="cfg-field" style="max-width:320px;">
+                            <input type="number" id="limiteMensal" placeholder=" " step="0.01" min="0">
+                            <label for="limiteMensal">Limite mensal total (R$)</label>
+                        </div>
+                    </div>
+
+                    <button class="cfg-btn" onclick="salvarMesFiscal()">Salvar</button>
+                </div>
+
+                <!-- LIMITES DE GASTOS + ALERTAS -->
+                <div class="cfg-card">
+                    <h2><i class='bx bx-wallet-alt' style="color:var(--cor-principal);font-size:1.6rem;"></i> Limite de Gastos</h2>
+
+                    <div class="cfg-split">
+                        <div class="cfg-split-main">
+                            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                <button class="cfg-btn" onclick="abrirModalLimite('instituicao')">Definir limite por instituição</button>
+                                <button class="cfg-btn" onclick="abrirModalLimite('categoria')" style="background:transparent;border:2px solid var(--cor-principal);color:var(--cor-principal);">Definir limite por categoria</button>
+                            </div>
+
+                            <!-- Tabela de limites existentes -->
+                            <div class="tabela-config">
+                                <table class="cfg-table" id="tabelaLimites">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Item limitado</th>
+                                            <th>Limite mensal (R$)</th>
+                                            <th>Opções</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="corpoLimites">
+                                        <tr class="cfg-table-empty">
+                                            <td colspan="4" style="padding:20px;">Nenhum limite configurado ainda.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="cfg-split-side">
+                            <div class="cfg-switch-row">
+                                <span class="cfg-switch-text">Receber alerta por WhatsApp</span>
+                                <div class="cfg-switch">
+                                    <input type="checkbox" id="sw_alerta_whatsapp" aria-label="Receber alerta por WhatsApp">
+                                    <label class="cfg-switch-slider" for="sw_alerta_whatsapp"></label>
+                                </div>
+                            </div>
+
+                            <div class="cfg-switch-row">
+                                <span class="cfg-switch-text">Receber alerta por Email</span>
+                                <div class="cfg-switch">
+                                    <input type="checkbox" id="sw_alerta_email" aria-label="Receber alerta por Email">
+                                    <label class="cfg-switch-slider" for="sw_alerta_email"></label>
+                                </div>
+                            </div>
+                            <small style="color:#6b7a7a; font-weight:600;">As preferências são salvas automaticamente.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INSTITUIÇÕES FINANCEIRAS -->
+                <div class="cfg-card">
+                    <h2><i class='bx bx-buildings' style="color:var(--cor-principal);font-size:1.6rem;"></i> Instituições Financeiras</h2>
+
+                    <div class="cfg-row" style="align-items:flex-end;">
+                        <div class="cfg-field" style="flex:1;max-width:380px;">
+                            <select id="sel_nova_instituicao" required>
+                                <option value="" disabled selected></option>
+                            </select>
+                            <label>Nova instituição</label>
+                        </div>
+                        <button class="cfg-btn" style="background:transparent;border:2px solid var(--cor-principal);color:var(--cor-principal);" onclick="abrirPersonalizada('instituicao')">Personalizada</button>
+                        <button class="cfg-btn" onclick="adicionarInstituicao()">Adicionar instituição</button>
+                    </div>
+
+                    <div class="tabela-config">
+                        <table class="cfg-table" id="tabelaInstituicoes">
+                            <thead>
+                                <tr>
+                                    <th>Instituição</th>
+                                    <th>Última atualização</th>
+                                    <th>Opções</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoInstituicoes">
+                                <tr class="cfg-table-empty">
+                                    <td colspan="3" style="padding:20px;">Nenhuma instituição cadastrada.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CATEGORIAS -->
+                <div class="cfg-card">
+                    <h2><i class='bx bx-tag-alt' style="color:var(--cor-principal);font-size:1.6rem;"></i> Categorias</h2>
+
+                    <div class="cfg-row" style="align-items:flex-end;">
+                        <div class="cfg-field" style="flex:1;max-width:380px;">
+                            <select id="sel_nova_categoria" required>
+                                <option value="" disabled selected></option>
+                            </select>
+                            <label>Selecionar categoria</label>
+                        </div>
+                        <button class="cfg-btn" style="background:transparent;border:2px solid var(--cor-principal);color:var(--cor-principal);" onclick="abrirPersonalizada('categoria')">Personalizada</button>
+                        <button class="cfg-btn" onclick="adicionarCategoria()">Adicionar categoria</button>
+                    </div>
+
+                    <div class="tabela-config">
+                        <table class="cfg-table" id="tabelaCategorias">
+                            <thead>
+                                <tr>
+                                    <th>Categoria</th>
+                                    <th>Última atualização</th>
+                                    <th>Opções</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoCategorias">
+                                <tr class="cfg-table-empty">
+                                    <td colspan="3" style="padding:20px;">Nenhuma categoria cadastrada.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- EVENTOS FINANCEIROS / LIMPEZA DE DADOS -->
+                <div class="cfg-card">
+                    <h2><i class='bx bx-trash-alt' style="color:var(--cor-principal);font-size:1.6rem;"></i> Eventos Financeiros</h2>
+
+                    <!-- Importar / Exportar -->
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <p class="cfg-delete-label">Importar / Exportar dados:</p>
+                        <div class="btn-downDados" style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <button onclick="importarDados()">
+                                <span>Importar dados</span>
+                                <i class="bx bx-arrow-in-down-square-half"></i>
+                            </button>
+                            <button onclick="exportarDados()">
+                                <span>Exportar dados</span>
+                                <i class="bx bx-arrow-out-up-square-half"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Exclusão -->
+                    <div style="display:flex;flex-direction:column;gap:16px;">
+                        <p class="cfg-delete-label">Excluir eventos por período:</p>
+                        <div class="cfg-row" style="align-items:flex-end;">
+                            <div style="display:flex;flex-direction:column;gap:4px;">
+                                <span id="cfgDeleteInicioLabel" style="font-size:0.82rem;color:var(--cor-principal);min-height:1.1em;font-weight:600;"></span>
+                                <button class="cfg-btn" style="background:transparent;border:2px solid var(--cor-principal);color:var(--cor-principal);" onclick="abrirCalendarioDelete('inicio')">
+                                    <i class='bx bx-calendar' style="margin-right:6px;"></i> Data inicial
+                                </button>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;">
+                                <span id="cfgDeleteFimLabel" style="font-size:0.82rem;color:var(--cor-principal);min-height:1.1em;font-weight:600;"></span>
+                                <button class="cfg-btn" style="background:transparent;border:2px solid var(--cor-principal);color:var(--cor-principal);" onclick="abrirCalendarioDelete('fim')">
+                                    <i class='bx bx-calendar' style="margin-right:6px;"></i> Data final
+                                </button>
+                            </div>
+                        </div>
+                        <button class="cfg-btn danger" style="align-self:flex-start;" onclick="apagarRegistrosPeriodo()">Apagar registros do período</button>
+
+                        <p class="cfg-delete-label" style="font-weight:900;margin-top:8px;">Excluir TODOS os eventos financeiros armazenados:</p>
+                        <button class="cfg-btn danger" style="align-self:flex-start;" onclick="apagarTodosRegistros()">Apagar TODOS os registros</button>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+</body>
+
+<!-- Calendar modal – seleção de período para exclusão -->
+<div class="modal" id="cfgCalModal" style="display:none;">
+    <div class="conteudoModal">
+        <span class="fechar" id="cfgCalFechar" style="cursor:pointer;">&times;</span>
+        <div class="topo-calendario">
+            <button id="cfgCalAnterior">◀</button>
+            <h2 id="cfgCalMesAno"></h2>
+            <button id="cfgCalProximo">▶</button>
+        </div>
+        <div class="calendario">
+            <div class="diasSemana">
+                <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span>
+                <span>Qui</span><span>Sex</span><span>Sáb</span>
+            </div>
+            <div class="dias" id="cfgCalDias"></div>
+        </div>
+        <button id="cfgCalConfirmar" disabled>Confirmar data</button>
+    </div>
+</div>
+
+</html>
+<script src="js/main.js"></script>
+<script src="js/configuracoes.js"></script>
+<script src="js/navbar.js"></script>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="styles/Estilos.css">
+</head>
+
+<body>
+    <div class="alerta" id="div_alerta">
+        <div class="conteudoAlerta" id="conteudoAlerta">
+
+        </div>
+    </div>
+
+    <div class="containerGeral">
+        <div class="main" id="main main-formulario">
+            <div class="containerCadastro">
+                <div class="card-formulario">
+                    <div class="campo full">
+                        <h1>Login</h1>
+                    </div>
+                <div class="campo full">
+                    <input type="text" id="ipt_email" placeholder=" " required>
+                    <label>Email</label>
+                </div>
+                <div class="campo full">
+                    <input type="password" id="ipt_senha" placeholder=" " required>
+                    <label>Senha</label>
+                </div>
+                <div class="campo full">
+                    <button onclick="checarDados()">Logar</button>
+                </div>
+                <div class="campo full">
+                    <p>Não possue uma conta? <a href="cadastrar.html">Cadastre-se</a></p>
+                </div>
+            </div>
+            </div>
+            
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <link rel="icon" type="image/png" href="assets/glaceonIcon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instituições</title>
+    <link href='assets/boxicons/boxicons.min.css' rel='stylesheet' id='bx-local'>
+    <script>
+        (function(){
+            function checkAndFallback(){
+                var el = document.createElement('i');
+                el.className = 'bx bx-check';
+                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:20px;visibility:hidden';
+                document.body.appendChild(el);
+                var ff = window.getComputedStyle(el).fontFamily || '';
+                document.body.removeChild(el);
+                if(ff.toLowerCase().indexOf('boxicons') === -1){
+                    var l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css';
+                    document.head.appendChild(l);
+                }
+            }
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', checkAndFallback);
+            } else { checkAndFallback(); }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles/Estilos.css">
+    <link rel="stylesheet" href="styles/root.css">
+    <link rel="stylesheet" href="styles/instituicoes.css">
+</head>
+
+<body data-tema="padrao" data-mode="light" onload="iniciarPagina()">
+    <div class="containerGeral">
+        <nav class="side-bar" id="navbar">
+            <ul>
+                <li onclick="sidebarFunction()">
+                    <i class='bx bx-menu-closer'></i>
+                </li>
+                <li>
+                    <a href="dashboard.html"><i class='bx bx-home'></i><span id="home">Home</span></a>
+                </li>
+                <li>
+                    <a href="registros.html"><i class='bx bx-address-book'></i><span id="reg"> Registros </span></a>
+                </li>
+                <li>
+                    <a href="adicionarRegistros.html"><i class='bx bx-file-plus'></i><span id="add">Adicionar Registros</span></a>
+                </li>
+                <li>
+                    <a href="agendaGastos.html"><i class='bx bx-calendar-event'></i><span id="agenda">Agenda</span></a>
+                </li>
+                <li>
+                    <a href="caixinhas.html"><i class='bx bx-piggy-bank'></i><span id="caixinhas">Poupança</span></a>
+                </li>
+                <li>
+                    <a id="toggleTheme">
+                        <span id="icone"><i class='bx bx-moon'></i></span>
+                        <span id="tema">Tema</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="configurações.html"><i class='bx bx-cog'></i><span id="config">Configurações</span></a>
+                </li>
+            </ul>
+        </nav>
+
+        <div id="main" class="main">
+
+            <!-- ── Cabeçalho ── -->
+            <div class="page-title-row">
+                <div class="welcome-actions">
+                    <h1>Instituições</h1>
+                    <a href="dashboard.html" class="btn-instituicoes">
+                        <i class='bx bx-home'></i> Dashboard
+                    </a>
+                </div>
+                <div class="top-actions">
+                    <div class="user-widget" id="userWidget">
+                        <div class="uw-info">
+                            <span class="uw-nome" id="uw_nome">Usuário</span>
+                            <div class="uw-xp-track">
+                                <div class="uw-xp-fill" id="uw_xp"></div>
+                                <span class="uw-lvl" id="uw_lvl">LVL 1</span>
+                            </div>
+                        </div>
+                        <div class="uw-avatar">
+                            <i class='bx bx-user' style="font-size:1.6rem; color:var(--cor-principal);"></i>
+                        </div>
+                        <div class="uw-dropdown" id="uwDropdown">
+                            <a href="meuPerfil.html" class="uw-dropdown-item">
+                                <i class='bx bx-user-circle'></i> Perfil
+                            </a>
+                            <a href="index.html" class="uw-dropdown-item">
+                                <i class='bx bx-arrow-back'></i> Voltar para seleção de usuário
+                            </a>
+                            <button class="uw-dropdown-item uw-logout-btn" id="btnLogout">
+                                <i class='bx bx-log-out'></i> LogOut
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Card de Período ── -->
+            <section class="dashboard-periodo-card">
+                <div class="periodo-header">
+                    <p><strong>Período Analisado — <span id="labelPeriodoAtual">–</span></strong></p>
+                </div>
+                <div id="filtros" class="filtros" style="flex-wrap:wrap;gap:4px;">
+                    <div class="campo">
+                        <select id="select_tempo" onchange="atualizarSeletoresPeriodo()">
+                            <option value="MENSAL">Mensal</option>
+                            <option value="TRIMESTRAL">Trimestral</option>
+                            <option value="SEMESTRAL">Semestral</option>
+                            <option value="ANUAL">Anual</option>
+                        </select>
+                        <label>Tipo de período</label>
+                    </div>
+                    <div class="campo" id="div_mes">
+                        <select id="select_mes" onchange="marcarAtalhoAtivo(null); carregarInstituicoes()">
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                        <label>Mês</label>
+                    </div>
+                    <div class="campo" id="div_trimestre" style="display:none;">
+                        <select id="select_trimestre" onchange="marcarAtalhoAtivo(null); carregarInstituicoes()">
+                            <option value="1">1º Trimestre (Jan–Mar)</option>
+                            <option value="2">2º Trimestre (Abr–Jun)</option>
+                            <option value="3">3º Trimestre (Jul–Set)</option>
+                            <option value="4">4º Trimestre (Out–Dez)</option>
+                        </select>
+                        <label>Trimestre</label>
+                    </div>
+                    <div class="campo" id="div_semestre" style="display:none;">
+                        <select id="select_semestre" onchange="marcarAtalhoAtivo(null); carregarInstituicoes()">
+                            <option value="1">1º Semestre (Jan–Jun)</option>
+                            <option value="2">2º Semestre (Jul–Dez)</option>
+                        </select>
+                        <label>Semestre</label>
+                    </div>
+                    <div class="campo" id="div_ano">
+                        <select id="select_ano" onchange="marcarAtalhoAtivo(null); carregarInstituicoes()">
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <label>Ano</label>
+                    </div>
+                </div>
+                <div class="dash-atalhos">
+                    <button class="dash-atalho-btn" data-atalho="mes-atual" onclick="selecionarRapido('mes-atual')">
+                        <i class='bx bx-calendar-check'></i> Mês Atual
+                    </button>
+                    <button class="dash-atalho-btn" data-atalho="mes-passado" onclick="selecionarRapido('mes-passado')">
+                        <i class='bx bx-calendar-minus'></i> Mês Passado
+                    </button>
+                    <button class="dash-atalho-btn" data-atalho="ano-atual" onclick="selecionarRapido('ano-atual')">
+                        <i class='bx bx-calendar'></i> Ano Atual
+                    </button>
+                    <button class="dash-atalho-btn" data-atalho="ano-passado" onclick="selecionarRapido('ano-passado')">
+                        <i class='bx bx-time-five'></i> Ano Passado
+                    </button>
+                </div>
+            </section>
+
+            <!-- ── KPIs ── -->
+            <div class="containerKPIS" id="containerKPIS">
+
+                <!-- KPI 1: Instituição mais utilizada -->
+                <div class="KPI">
+                    <div class="kpi-head">
+                        <p class="kpi-label">Instituição Mais Utilizada</p>
+                        <span class="kpi-icon-box" aria-hidden="true">
+                            <i class='bx bx-buildings'></i>
+                        </span>
+                    </div>
+                    <span class="kpi-valor-grande" id="kpi1Nome">–</span>
+                    <p class="kpi-sub" id="kpi1Sub">–</p>
+                </div>
+
+                <!-- KPI 2: Maior gasto médio por transação -->
+                <div class="KPI">
+                    <p class="kpi-label">Maior Gasto Médio/Transação</p>
+                    <p class="kpi-subtitulo" id="kpi2Nome">–</p>
+                    <span class="kpi-valor-grande" id="kpi2Valor">–</span>
+                    <p class="kpi-sub">por operação</p>
+                </div>
+
+                <!-- KPI 3: Parcelamentos ativos -->
+                <div class="KPI">
+                    <p class="kpi-label">Parcelamentos Ativos</p>
+                    <span class="kpi-valor-grande" id="kpi3Total">–</span>
+                    <p class="kpi-sub">Em todas as instituições</p>
+                </div>
+
+            </div>
+
+            <!-- ── Cards de instituições ── -->
+            <div id="loadingInstituicoes" class="inst-loading">
+                <i class='bx bx-loader-alt bx-spin'></i> Carregando instituições...
+            </div>
+            <div class="instituicoes-grid" id="instituicoesGrid"></div>
+
+            <!-- ── Estado vazio ── -->
+            <div id="semInstituicoes" class="inst-vazio" style="display:none;">
+                <i class='bx bx-buildings'></i>
+                <h3>Nenhuma instituição vinculada</h3>
+                <p>Acesse Configurações para vincular suas instituições financeiras.</p>
+                <a href="configurações.html" class="btn-inst-config">
+                    <i class='bx bx-cog'></i> Configurações
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         MODAL DE DETALHE DA INSTITUIÇÃO
+    ══════════════════════════════════════════════════════════ -->
+    <div id="instModalOverlay" class="inst-modal-overlay" onclick="fecharModalInstituicao(event)">
+        <div class="inst-modal-content" id="instModalContent">
+
+            <!-- Cabeçalho do modal -->
+            <div class="inst-modal-header">
+                <div class="inst-modal-avatar" id="instModalAvatar"></div>
+                <div class="inst-modal-titulo">
+                    <h2 id="instModalNome">Instituição</h2>
+                    <span class="inst-modal-badge" id="instModalBadge"></span>
+                </div>
+                <button class="inst-modal-close" onclick="fecharModalInstituicaoBtn()">
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+
+            <!-- Abas -->
+            <div class="inst-modal-tabs">
+                <button class="inst-tab ativo" data-tab="resumo" onclick="trocarAba('resumo')">
+                    <i class='bx bx-bar-chart-alt-2'></i> Resumo
+                </button>
+                <button class="inst-tab" data-tab="parcelamentos" onclick="trocarAba('parcelamentos')">
+                    <i class='bx bx-credit-card'></i> Parcelamentos
+                </button>
+                <button class="inst-tab" data-tab="poupanca" onclick="trocarAba('poupanca')">
+                    <i class='bx bx-money'></i> Poupança
+                </button>
+                <button class="inst-tab" data-tab="config" onclick="trocarAba('config')">
+                    <i class='bx bx-cog'></i> Configurar
+                </button>
+                <button class="inst-tab" data-tab="recorrentes" onclick="trocarAba('recorrentes')">
+                    <i class='bx bx-repeat'></i> Recorrentes
+                </button>
+            </div>
+
+            <!-- ABA: Resumo -->
+            <div class="inst-tab-panel ativo" id="tab-resumo">
+                <div class="inst-resumo-grid">
+                    <div class="inst-stat-card">
+                        <span class="inst-stat-label">Saldo Disponível</span>
+                        <span class="inst-stat-valor verde" id="mdSaldo">R$ 0,00</span>
+                    </div>
+                    <div class="inst-stat-card">
+                        <span class="inst-stat-label">Transações</span>
+                        <span class="inst-stat-valor" id="mdTransacoes">0</span>
+                    </div>
+                    <div class="inst-stat-card">
+                        <span class="inst-stat-label">Total Crédito</span>
+                        <span class="inst-stat-valor vermelho" id="mdCredito">R$ 0,00</span>
+                    </div>
+                    <div class="inst-stat-card">
+                        <span class="inst-stat-label">Total Débito</span>
+                        <span class="inst-stat-valor vermelho" id="mdDebito">R$ 0,00</span>
+                    </div>
+                    <div class="inst-stat-card">
+                        <span class="inst-stat-label">Parcelamentos Ativos</span>
+                        <span class="inst-stat-valor" id="mdParcelas">0</span>
+                    </div>
+                    <div class="inst-stat-card">
+                        <span class="inst-stat-label">Taxa de Juros</span>
+                        <span class="inst-stat-valor" id="mdTaxa">–</span>
+                    </div>
+                </div>
+
+                <!-- Seção de crédito (oculta para instituições sem crédito) -->
+                <div class="inst-credito-section" id="mdCreditoSection">
+                    <div class="inst-credito-header">
+                        <span class="inst-stat-label">Crédito utilizado</span>
+                        <span id="mdCreditoPct" class="inst-credito-pct">0%</span>
+                        <span id="mdCreditoLimite" class="inst-credito-limite"></span>
+                    </div>
+                    <div class="inst-progress-track">
+                        <div class="inst-progress-fill" id="mdCreditoFill"></div>
+                    </div>
+                </div>
+
+                <!-- Distribuição por movimento -->
+                <div id="mdDistribuicaoSection" style="margin-top:16px; display:none;">
+                    <p class="kpi-label" style="margin-bottom:8px;">Distribuição por tipo de movimento</p>
+                    <div id="mdDistribuicao" class="inst-distribuicao-grid"></div>
+                </div>
+            </div>
+
+            <!-- ABA: Parcelamentos -->
+            <div class="inst-tab-panel" id="tab-parcelamentos">
+                <div class="inst-loading" id="parcelamentosLoading" style="display:none;">
+                    <i class='bx bx-loader-alt bx-spin'></i> Carregando parcelamentos...
+                </div>
+                <div id="parcelamentosResumo"></div>
+                <div id="parcelamentosLista" class="inst-parc-lista"></div>
+                <div id="parcelamentosVazio" class="inst-vazio" style="display:none;">
+                    <i class='bx bx-credit-card'></i>
+                    <h3>Sem parcelamentos</h3>
+                    <p>Nenhum parcelamento encontrado para esta instituição.</p>
+                </div>
+            </div>
+
+            <!-- ABA: Poupança -->
+            <div class="inst-tab-panel" id="tab-poupanca">
+                <div class="inst-poupanca-resumo" id="poupancaResumo">
+                    <div class="inst-stat-card">
+                        <span class="inst-stat-label">Poupanças Abertas</span>
+                        <span class="inst-stat-valor" id="poupQtd">0</span>
+                    </div>
+                    <div class="inst-stat-card">
+                        <span class="inst-stat-label">Valor em Poupança</span>
+                        <span class="inst-stat-valor verde" id="poupValor">R$ 0,00</span>
+                    </div>
+                    <div class="inst-stat-card">
+                        <span class="inst-stat-label">Meta Total</span>
+                        <span class="inst-stat-valor" id="poupMeta">R$ 0,00</span>
+                    </div>
+                </div>
+                <div id="poupancaLista" class="inst-poupanca-lista"></div>
+                <div id="poupancaVazio" class="inst-poupanca-vazio" style="display:none;">
+                    <i class='bx bx-money'></i>
+                    <p>Nenhuma poupança vinculada a esta instituição.</p>
+                    <a href="caixinhas.html" class="btn-inst-link">
+                        <i class='bx bx-plus'></i> Criar Poupança
+                    </a>
+                </div>
+            </div>
+
+            <!-- ABA: Configurar -->
+            <div class="inst-tab-panel" id="tab-config">
+                <div class="inst-config-form">
+                    <p class="inst-config-desc">Configure o limite de crédito e a taxa de juros desta instituição.</p>
+
+                    <div class="inst-campo-wrap" id="campLimiteCredito">
+                        <label class="inst-campo-label">Limite de Crédito (R$)</label>
+                        <input type="text" id="inputLimiteCredito" class="inst-campo-input" placeholder="R$ 0,00" />
+                    </div>
+
+                    <div class="inst-campo-wrap">
+                        <label class="inst-campo-label">Taxa de Juros (% a.m.)</label>
+                        <input type="number" id="inputTaxaJuros" class="inst-campo-input" placeholder="Ex: 2.5" step="0.01" min="0" />
+                    </div>
+
+                    <button class="inst-btn-salvar" id="btnSalvarConfig" onclick="salvarConfiguracaoInstituicao()">
+                        <i class='bx bx-save'></i> Salvar Configurações
+                    </button>
+                    <div id="configFeedback" class="inst-feedback" style="display:none;"></div>
+
+                    <!-- Pagamento de Fatura (só para instituições com crédito) -->
+                    <div id="secaoPagarFatura" style="margin-top:24px;padding-top:20px;border-top:1px solid var(--cor-tinte-borda);">
+                        <p class="kpi-label" style="margin-bottom:10px;"><i class='bx bx-credit-card'></i> Pagamento de Fatura</p>
+                        <p style="font-size:0.87rem;color:var(--cor-texto-secundario);margin-bottom:12px;">
+                            Registre o pagamento da fatura do cartão de crédito para liberar o limite disponível.
+                        </p>
+                        <div class="inst-campo-wrap">
+                            <label class="inst-campo-label">Valor a pagar (R$)</label>
+                            <input type="text" id="inputValorFatura" class="inst-campo-input" placeholder="R$ 0,00" />
+                        </div>
+                        <button class="inst-btn-salvar" id="btnPagarFatura" onclick="pagarFaturaInstituicao()"
+                            style="background:var(--cor-principal);margin-top:8px;">
+                            <i class='bx bx-credit-card'></i> Pagar Fatura
+                        </button>
+                        <div id="faturaFeedback" class="inst-feedback" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA: Recorrentes — conteúdo carregado dinamicamente -->
+            <div class="inst-tab-panel" id="tab-recorrentes">
+                <div class="inst-loading" style="display:none;">
+                    <i class='bx bx-loader-alt bx-spin'></i> Carregando...
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/instituicoes.js"></script>
+    <script src="js/navbar.js"></script>
+</body>
+
+</html>
+
+
+
+
+
+

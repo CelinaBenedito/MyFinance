@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <link rel="icon" type="image/png" href="assets/glaceonIcon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/Estilos.css">
+    <link rel="stylesheet" href="styles/root.css">
+    <link rel="stylesheet" href="styles/modal.css">
+    <script src="assets/boxicons/boxicons.js" onerror="var s=document.createElement('script');s.src='https://unpkg.com/boxicons@2.1.4/dist/boxicons.js';document.head.appendChild(s)"></script>
+    <link href='assets/boxicons/boxicons.min.css' rel='stylesheet' id='bx-local'>
+    <script>
+        // Fallback: se icones locais nao carregarem, usa CDN
+        (function(){
+            function checkAndFallback(){
+                var el = document.createElement('i');
+                el.className = 'bx bx-check';
+                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:20px;visibility:hidden';
+                document.body.appendChild(el);
+                var ff = window.getComputedStyle(el).fontFamily || '';
+                document.body.removeChild(el);
+                if(ff.toLowerCase().indexOf('boxicons') === -1){
+                    var l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css';
+                    document.head.appendChild(l);
+                }
+            }
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', checkAndFallback);
+            } else { checkAndFallback(); }
+        })();
+    </script>
+    <title>Registros</title>
+</head>
+
+<body data-tema="padrao" data-mode="light" onload="carregarRegistros()">
+<div class="containerGeral">
+    <nav class="side-bar" id="navbar">
+        <ul>
+            <li onclick="sidebarFunction()">
+                <i class='bx  bx-menu-closer'></i>
+            </li>
+            <li>
+                <a href="dashboard.html"> <i class='bx  bx-home'></i> <span id="home">Home</span></a>
+            </li>
+            <li>
+                <a href="adicionarRegistros.html"> <i class='bx  bx-file-plus'></i> <span id="add">Adicionar
+                            Registros</span></a>
+            </li>
+            <li>
+                <a href="registros.html"> <i class='bx  bx-address-book'></i> <span id="reg"> Registros
+                        </span></a>
+            </li>
+            <li>
+                <a href="agendaGastos.html"><i class='bx  bx-calendar-event'></i> <span
+                        id="agenda">Agenda</span></a>
+            </li>
+            <li>
+                <a href="caixinhas.html"><i class='bx bx-piggy-bank'></i><span id="caixinhas">Poupança</span></a>
+            </li>
+            <li>
+                <a id="toggleTheme">
+                    <span id="icone"><i class='bx bx-moon'></i></span>
+                    <span id="tema">Tema</span>
+                </a>
+            </li>
+            <li>
+                <a href="configurações.html"><i class='bx  bx-cog'></i><span id="config">Configurações</span></a>
+            </li>
+        </ul>
+    </nav>
+    <div class="main" id="main">
+
+        <div id="containerRegistros" class="containerRegistros">
+
+            <h1>Registros</h1>
+            <button id="btnAbrirFiltro" title="Filtrar registros"><i class='bx  bx-filter'></i></button>
+            <div class="divimgGlaceonCostas">
+                <img class="imgGlaceonCostas" src="assets/gif/glaceon de costas.gif" alt="">
+            </div>
+        </div>
+        <div class="lista">
+
+            <div class="registros" id="registros">
+                <div class="anos-lista" id="anosLista"></div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/navbar.js"></script>
+<script src="js/registros.js"></script>
+</body>
+
+</html>
