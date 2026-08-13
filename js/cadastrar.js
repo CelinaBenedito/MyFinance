@@ -1,6 +1,24 @@
 
 
 div_alerta.style.display = 'none';
+let cadastroEmAndamento = false;
+
+function obterBotaoCadastro() {
+    return document.getElementById("btn_cadastro");
+}
+
+function definirEstadoCadastro(carregando) {
+    cadastroEmAndamento = carregando;
+    const botao = obterBotaoCadastro();
+    if (!botao) return;
+
+    if (!botao.dataset.textoOriginal) {
+        botao.dataset.textoOriginal = botao.textContent;
+    }
+
+    botao.disabled = carregando;
+    botao.textContent = carregando ? "Cadastrando..." : botao.dataset.textoOriginal;
+}
 
 // Aplica máscara no campo de data ao carregar
 (function () {
@@ -33,6 +51,8 @@ function alerta(texto) {
 }
 
 function checarDados() {
+    if (cadastroEmAndamento) return;
+
     const nome = document.getElementById("ipt_nome").value.trim();
     const sobrenome = document.getElementById("ipt_sobrenome").value.trim();
     const dataNascimentoBR = document.getElementById("ipt_dataNascimento").value.trim();
@@ -166,7 +186,10 @@ function checarDados() {
 }
 
 function cadastrar(nome, sobrenome, dataNascimento, sexo, email, senha) {
+    if (cadastroEmAndamento) return;
+
     console.warn("Iniciando o cadastro!");
+    definirEstadoCadastro(true);
 
     MainAPI.cadastrarUsuario({
         nome: nome,
@@ -184,9 +207,11 @@ function cadastrar(nome, sobrenome, dataNascimento, sexo, email, senha) {
                 window.location.href = "login.html";
             }, 1500);
         } else {
+            definirEstadoCadastro(false);
             alerta(`Erro ao criar conta. Verifique os dados e tente novamente. <button onclick='div_alerta.style.display="none"'>OK</button>`);
         }
     }).catch((error) => {
+        definirEstadoCadastro(false);
         console.error("Erro na chamada ao MainAPI:", error);
         alerta(`Erro ao conectar ao servidor. <button onclick='div_alerta.style.display="none"'>OK</button>`);
     });

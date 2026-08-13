@@ -1,5 +1,23 @@
 
 div_alerta.style.display = 'none';
+let loginEmAndamento = false;
+
+function obterBotaoLogin() {
+    return document.getElementById("btn_login");
+}
+
+function definirEstadoLogin(carregando) {
+    loginEmAndamento = carregando;
+    const botao = obterBotaoLogin();
+    if (!botao) return;
+
+    if (!botao.dataset.textoOriginal) {
+        botao.dataset.textoOriginal = botao.textContent;
+    }
+
+    botao.disabled = carregando;
+    botao.textContent = carregando ? "Entrando..." : botao.dataset.textoOriginal;
+}
 
 function habilitarFecharAlertaAoClicarFora() {
     const divAl = document.getElementById("div_alerta");
@@ -24,6 +42,8 @@ function alerta(texto) {
 }
 
 function checarDados(){
+    if (loginEmAndamento) return;
+
     const email = document.getElementById("ipt_email").value.trim();
     const senha = document.getElementById("ipt_senha").value;
 
@@ -75,7 +95,10 @@ function checarDados(){
 }
 
 function login(email, senha){
+    if (loginEmAndamento) return;
+
     console.warn("Iniciando o login!");
+    definirEstadoLogin(true);
 
     MainAPI.loginUsuario({
         email: email,
@@ -129,12 +152,15 @@ function login(email, senha){
                     window.location.href = "dashboard.html";
                 }, 1500);
             }).catch(() => {
+                definirEstadoLogin(false);
                 alerta(`Erro ao processar resposta do servidor. <button onclick='div_alerta.style.display="none"'>OK</button>`);
             });
         } else {
+            definirEstadoLogin(false);
             alerta(`Email ou senha incorretos. <button onclick='div_alerta.style.display="none"'>OK</button>`);
         }
     }).catch((error) => {
+        definirEstadoLogin(false);
         console.error("Erro na chamada ao MainAPI:", error);
         alerta(`Erro ao conectar ao servidor. <button onclick='div_alerta.style.display="none"'>OK</button>`);
     });
