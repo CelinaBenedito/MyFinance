@@ -708,9 +708,26 @@
                     return;
                 }
                 mostrarAlerta("Conta excluída com sucesso.");
+
+                // Remove o usuário do array de perfis salvos
+                try {
+                    const raw = localStorage.getItem("perfis");
+                    const perfis = raw ? JSON.parse(raw) : [];
+                    const perfisAtualizados = perfis.filter(function(p) {
+                        return p.id !== userId && String(p.id) !== String(userId);
+                    });
+                    const perfisJson = JSON.stringify(perfisAtualizados);
+                    localStorage.setItem("perfis", perfisJson);
+                    if (window.desktopBridge) {
+                        try { window.desktopBridge.savePerfis(perfisJson); } catch (_) {}
+                    }
+                } catch (errPerfis) {
+                    console.error("Erro ao remover perfil da lista:", errPerfis);
+                }
+
                 localStorage.removeItem("usuarioLogado");
                 setTimeout(() => {
-                    window.location.href = "login.html";
+                    window.location.href = "index.html";
                 }, 1500);
             } catch (e) {
                 mostrarAlerta("Erro ao excluir conta.");

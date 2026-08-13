@@ -252,9 +252,9 @@
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.30);
     width: 100%;
-    max-width: 600px;
+    max-width: 950px;
     max-height: 88vh;
-    overflow-y: auto;
+    overflow: hidden;
     animation: instModalIn 0.22s ease;
     display: flex;
     flex-direction: column;
@@ -273,6 +273,7 @@
     padding: 22px 24px 16px;
     border-bottom: 1px solid var(--cor-tinte-borda);
     flex-shrink: 0;
+
 }
 
 .inst-modal-avatar {
@@ -747,10 +748,36 @@
     to   { opacity: 0; transform: scaleY(0); max-height: 0; padding: 0; margin: 0; }
 }
 
-/* ── Aba Recorrentes ──────────────────────────────────────────── */.inst-recorrentes-info {
+/* ── Aba Recorrentes ──────────────────────────────────────────── */
+.inst-recorrentes-info {
     display: flex;
     flex-direction: column;
     gap: 20px;
+}
+
+.inst-rec-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.inst-rec-item {
+    background: var(--cor-fundo-pagina);
+    border: 1px solid var(--cor-tinte-borda);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.inst-rec-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--sombra-card);
+    border-color: var(--cor-principal);
 }
 
 .inst-recorrente-destaque {
@@ -819,7 +846,44 @@
     background: var(--cor-tinte-suave);
 }
 
+/* ── Modais de Recorrência (Detalhes e Edição) ───────────────── */
+#recorrenciaModalOverlay .inst-modal-content,
+#editRecorrenciaModalOverlay .inst-modal-content {
+    overflow: hidden;
+    max-width: 950px;
+}
+
+#recorrenciaModalOverlay .inst-modal-content > div:last-child,
+#editRecorrenciaModalOverlay .inst-modal-content > div:last-child {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    flex: 1;
+}
+
+#recorrenciaModalOverlay .inst-modal-content > div:last-child::-webkit-scrollbar,
+#editRecorrenciaModalOverlay .inst-modal-content > div:last-child::-webkit-scrollbar {
+    width: 6px;
+}
+
+#recorrenciaModalOverlay .inst-modal-content > div:last-child::-webkit-scrollbar-thumb,
+#editRecorrenciaModalOverlay .inst-modal-content > div:last-child::-webkit-scrollbar-thumb {
+    background: var(--cor-tinte-borda);
+    border-radius: 3px;
+}
+
+#recorrenciaModalOverlay .inst-modal-content > div:last-child::-webkit-scrollbar-track,
+#editRecorrenciaModalOverlay .inst-modal-content > div:last-child::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 /* ── Responsivo ───────────────────────────────────────────────── */
+@media (max-width: 820px) {
+    .inst-modal-content {
+        max-width: 95vw;
+    }
+}
+
 @media (max-width: 720px) {
     .inst-resumo-grid {
         grid-template-columns: repeat(2, 1fr);

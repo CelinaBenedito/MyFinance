@@ -293,7 +293,7 @@
                 </div>
                 <div class="inst-card-cd">
                     <span class="inst-cd-label">DÉBITO</span>
-                    <span class="inst-cd-valor vermelho">${fmtBRL(inst.totalDebito)}</span>
+                    <span class="inst-cd-valor verde">${fmtBRL(inst.totalDebito)}</span>
                 </div>
             </div>
 
@@ -428,7 +428,9 @@
 
     async function carregarDetalheInstituicao(instUsuarioId) {
         try {
-            const res = await MainAPI.request(`/instituicoes/${instUsuarioId}/detalhe`, { method: "GET" });
+            const p = periodoAtual();
+            const url = `/instituicoes/${instUsuarioId}/detalhe?${buildPeriodoParams(p)}`;
+            const res = await MainAPI.request(url, { method: "GET" });
             if (!res.ok) return;
             const detalhe = await res.json();
 
@@ -756,6 +758,9 @@
                 return;
             }
 
+            // Armazena no cache para usar na edição
+            _recorrenciasCache = lista;
+
             painel.innerHTML = `
                 <p class="kpi-label" style="margin-bottom:12px;">Eventos Recorrentes desta Instituição</p>
                 <div class="inst-rec-lista" id="recLista">
@@ -792,7 +797,7 @@
             Diario: 'Diário', Semanal: 'Semanal', Mensal: 'Mensal', Anual: 'Anual'
         };
         const TIPOS_LABEL = {
-            Gasto: '🔴 Gasto', Recebimento: '🟢 Recebimento'
+            Gasto: 'Gasto', Recebimento: 'Recebimento'
         };
         const per = PERIODOS[r.periodicidade] || r.periodicidade || '–';
         const tipo = TIPOS_LABEL[r.tipo] || r.tipo || '–';
@@ -800,21 +805,27 @@
         const dataFim    = r.dataFim    ? new Date(r.dataFim).toLocaleDateString('pt-BR')    : '–';
         const valor      = r.valor != null ? fmtBRL(r.valor) : '–';
         const descricao  = r.descricao || '';
+        const corTipo = r.tipo === 'Gasto' ? 'var(--red-700, #b91c1c)' : 'var(--cor-principal)';
 
         return `
-        <div class="inst-rec-item" style="background:var(--cor-fundo-card);border:1px solid var(--cor-tinte-borda);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div class="inst-rec-item" onclick="abrirDetalhesRecorrencia('${r.id}')">
             <div style="flex:1;min-width:0;">
-                <div style="font-weight:700;font-size:0.97rem;margin-bottom:4px;">${descricao || tipo}</div>
-                <div style="font-size:0.83rem;color:var(--cor-texto-secundario);">
-                    ${tipo} · ${per} · ${valor}
+                <div style="font-weight:700;font-size:0.97rem;margin-bottom:4px;color:var(--cor-texto-principal);">${descricao || tipo}</div>
+                <div style="font-size:0.83rem;color:var(--cor-texto-principal);">
+                    <span style="color:${corTipo};font-weight:700;">${tipo}</span> · ${per} · ${valor}
                 </div>
                 <div style="font-size:0.8rem;color:var(--cor-texto-secundario);margin-top:3px;">
                     ${dataInicio} → ${dataFim}
                 </div>
             </div>
-            <button class="inst-parc-del-btn" data-del-rec="${r.id}" title="Excluir recorrência">
-                <i class='bx bx-trash'></i>
-            </button>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button class="inst-parc-del-btn" data-edit-rec="${r.id}" title="Editar recorrência" onclick="event.stopPropagation();abrirModalEditarRecorrencia('${r.id}')" style="background:var(--cor-principal);color:white;">
+                    <i class='bx bx-edit'></i>
+                </button>
+                <button class="inst-parc-del-btn" data-del-rec="${r.id}" title="Excluir recorrência" onclick="event.stopPropagation()">
+                    <i class='bx bx-trash'></i>
+                </button>
+            </div>
         </div>`;
     }
 
@@ -836,6 +847,326 @@
             alert("Erro de conexão ao excluir.");
         }
     }
+
+    /* ══════════════════════════════════════════════════════════
+       MODAL DE DETALHES DA RECORRÊNCIA
+    ══════════════════════════════════════════════════════════ */
+    window.abrirDetalhesRecorrencia = async function(recorrenciaId) {
+        try {
+            // Busca os eventos da recorrência
+            const res = await MainAPI.request(
+                `/registros/recorrentes/${recorrenciaId}/eventos`,
+                { method: "GET" }
+            );
+
+            if (!res.ok && res.status !== 204) {
+                alert("Erro ao carregar eventos da recorrência.");
+                return;
+            }
+
+            const eventos = res.status === 204 ? [] : await res.json();
+
+            // Cria overlay do modal
+            const overlay = document.createElement('div');
+            overlay.className = 'inst-modal-overlay';
+            overlay.style.display = 'flex';
+            overlay.id = 'recorrenciaModalOverlay';
+
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+
+            const eventosFuturos = eventos.filter(e => {
+                const dataEvento = parseDateField(e.eventoFinanceiro.dataEvento);
+                return dataEvento && dataEvento >= hoje;
+            });
+
+            const eventosPassados = eventos.filter(e => {
+                const dataEvento = parseDateField(e.eventoFinanceiro.dataEvento);
+                return dataEvento && dataEvento < hoje;
+            });
+
+            overlay.innerHTML = `
+                <div class="inst-modal-content" style="max-width:700px;">
+                    <div class="inst-modal-header">
+                        <h2>Detalhes da Recorrência</h2>
+                        <button class="inst-modal-close" onclick="fecharModalRecorrencia()">
+                            <i class='bx bx-x'></i>
+                        </button>
+                    </div>
+                    
+                    <div style="padding:20px;">
+                        <div style="display:flex;gap:16px;margin-bottom:20px;">
+                            <div class="inst-stat-card">
+                                <span class="inst-stat-label">Total de Eventos</span>
+                                <span class="inst-stat-valor">${eventos.length}</span>
+                            </div>
+                            <div class="inst-stat-card">
+                                <span class="inst-stat-label">Futuros</span>
+                                <span class="inst-stat-valor" style="color:var(--cor-principal);">${eventosFuturos.length}</span>
+                            </div>
+                            <div class="inst-stat-card">
+                                <span class="inst-stat-label">Passados</span>
+                                <span class="inst-stat-valor">${eventosPassados.length}</span>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom:16px;">
+                            <h3 style="font-size:0.95rem;margin-bottom:8px;color:var(--cor-principal);">
+                                <i class='bx bx-time-five'></i> Eventos Futuros (${eventosFuturos.length})
+                            </h3>
+                            ${eventosFuturos.length === 0 ? 
+                                '<p style="color:var(--cor-texto-secundario);font-size:0.85rem;">Nenhum evento futuro</p>' :
+                                `<div style="max-height:200px;overflow-y:auto;">${eventosFuturos.map(e => buildEventoItemHTML(e)).join('')}</div>`
+                            }
+                        </div>
+                        
+                        <div>
+                            <h3 style="font-size:0.95rem;margin-bottom:8px;">
+                                <i class='bx bx-check-circle'></i> Eventos Passados (${eventosPassados.length})
+                            </h3>
+                            ${eventosPassados.length === 0 ? 
+                                '<p style="color:var(--cor-texto-secundario);font-size:0.85rem;">Nenhum evento passado</p>' :
+                                `<div style="max-height:200px;overflow-y:auto;">${eventosPassados.map(e => buildEventoItemHTML(e)).join('')}</div>`
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    fecharModalRecorrencia();
+                }
+            });
+
+        } catch (e) {
+            console.error("Erro ao abrir detalhes da recorrência:", e);
+            alert("Erro ao carregar detalhes da recorrência.");
+        }
+    };
+
+    function buildEventoItemHTML(evento) {
+        const ef = evento.eventoFinanceiro || {};
+        const dataEvento = parseDateField(ef.dataEvento);
+        const dataFmt = dataEvento ?
+            `${String(dataEvento.getDate()).padStart(2, '0')}/${String(dataEvento.getMonth() + 1).padStart(2, '0')}/${dataEvento.getFullYear()}` :
+            '–';
+
+        const valor = ef.valor != null ? fmtBRL(ef.valor) : '–';
+        const descricao = ef.descricao || evento.gastoDetalhe?.tituloGasto || 'Sem descrição';
+
+        return `
+        <div style="background:var(--cor-fundo-card);border:1px solid var(--cor-tinte-borda);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div style="font-weight:600;font-size:0.87rem;">${descricao}</div>
+                <div style="font-size:0.8rem;color:var(--cor-texto-secundario);">${dataFmt}</div>
+            </div>
+            <div style="font-weight:700;font-size:0.9rem;color:${ef.tipo === 'Gasto' ? 'var(--red-700)' : 'var(--cor-principal)'};">
+                ${valor}
+            </div>
+        </div>`;
+    }
+
+    window.fecharModalRecorrencia = function() {
+        const overlay = document.getElementById('recorrenciaModalOverlay');
+        if (overlay) {
+            overlay.remove();
+            document.body.style.overflow = '';
+        }
+    };
+
+    /* ══════════════════════════════════════════════════════════
+       EDITAR RECORRÊNCIA
+    ══════════════════════════════════════════════════════════ */
+    let _recorrenciasCache = [];
+    
+    window.abrirModalEditarRecorrencia = async function(recorrenciaId) {
+        // Busca a recorrência do cache
+        let recorrencia = _recorrenciasCache.find(r => r.id === recorrenciaId);
+        
+        if (!recorrencia) {
+            alert('Erro: recorrência não encontrada.');
+            return;
+        }
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'inst-modal-overlay';
+        overlay.style.display = 'flex';
+        overlay.id = 'editRecorrenciaModalOverlay';
+        
+        const PERIODOS = ['Diario', 'Semanal', 'Mensal', 'Anual'];
+        const dataFim = recorrencia.dataFim ? new Date(recorrencia.dataFim).toISOString().split('T')[0] : '';
+        
+        overlay.innerHTML = `
+            <div class="inst-modal-content" style="max-width:600px;">
+                <div class="inst-modal-header">
+                    <h2>Editar Recorrência</h2>
+                    <button class="inst-modal-close" onclick="fecharModalEditarRecorrencia()">
+                        <i class='bx bx-x'></i>
+                    </button>
+                </div>
+                
+                <div style="padding:20px;">
+                    <div style="background:var(--cor-fundo-secondary);border:1px solid var(--cor-tinte-borda);border-radius:8px;padding:12px;margin-bottom:16px;">
+                        <p style="font-size:0.85rem;color:var(--cor-texto-secundario);margin:0;">
+                            <strong style="color:var(--cor-principal);">⚠️ Atenção:</strong> Ao editar esta recorrência, 
+                            todos os eventos futuros serão recriados com os novos dados. Os eventos passados não serão alterados.
+                        </p>
+                    </div>
+                    
+                    <form id="formEditarRecorrencia" onsubmit="salvarEdicaoRecorrencia(event, '${recorrenciaId}')">
+                        <div class="inst-campo-wrap">
+                            <label class="inst-campo-label">Descrição</label>
+                            <input type="text" id="editRecDesc" class="inst-campo-input" 
+                                   value="${(recorrencia.descricao || '').replace(/"/g, '&quot;')}" placeholder="Ex: Salário mensal" />
+                        </div>
+                        
+                        <div class="inst-campo-wrap">
+                            <label class="inst-campo-label">Valor (R$)</label>
+                            <input type="number" id="editRecValor" class="inst-campo-input" 
+                                   value="${recorrencia.valor || ''}" step="0.01" min="0" required />
+                        </div>
+                        
+                        <div class="inst-campo-wrap">
+                            <label class="inst-campo-label">Periodicidade</label>
+                            <select id="editRecPeriodicidade" class="inst-campo-input" required>
+                                ${PERIODOS.map(p => `<option value="${p}" ${p === recorrencia.periodicidade ? 'selected' : ''}>${p}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <div class="inst-campo-wrap">
+                            <label class="inst-campo-label">Data Final</label>
+                            <input type="date" id="editRecDataFim" class="inst-campo-input" 
+                                   value="${dataFim}" />
+                        </div>
+                        
+                        <div class="inst-campo-wrap" id="editRecDiaWrap" style="${recorrencia.periodicidade === 'Mensal' || recorrencia.periodicidade === 'Anual' ? '' : 'display:none;'}">
+                            <label class="inst-campo-label">Dia do mês</label>
+                            <input type="number" id="editRecDia" class="inst-campo-input" 
+                                   value="${recorrencia.dia || ''}" min="1" max="31" />
+                        </div>
+                        
+                        <div class="inst-campo-wrap" id="editRecIntervaloWrap" style="${recorrencia.periodicidade === 'Semanal' || recorrencia.periodicidade === 'Mensal' ? '' : 'display:none;'}">
+                            <label class="inst-campo-label">Intervalo (a cada X ${recorrencia.periodicidade === 'Semanal' ? 'semanas' : 'meses'})</label>
+                            <input type="number" id="editRecIntervalo" class="inst-campo-input" 
+                                   value="${recorrencia.intervalo || 1}" min="1" />
+                        </div>
+                        
+                        <div style="display:flex;gap:12px;margin-top:20px;">
+                            <button type="button" onclick="fecharModalEditarRecorrencia()" 
+                                    class="inst-btn-salvar" style="background:var(--cor-texto-secundario);">
+                                <i class='bx bx-x'></i> Cancelar
+                            </button>
+                            <button type="submit" class="inst-btn-salvar" style="flex:1;">
+                                <i class='bx bx-save'></i> Salvar Alterações
+                            </button>
+                        </div>
+                        
+                        <div id="editRecFeedback" class="inst-feedback" style="display:none;margin-top:12px;"></div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        
+        // Listener para mudar campos baseado na periodicidade
+        document.getElementById('editRecPeriodicidade').addEventListener('change', function(e) {
+            const val = e.target.value;
+            document.getElementById('editRecDiaWrap').style.display = 
+                (val === 'Mensal' || val === 'Anual') ? '' : 'none';
+            document.getElementById('editRecIntervaloWrap').style.display = 
+                (val === 'Semanal' || val === 'Mensal') ? '' : 'none';
+        });
+        
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                fecharModalEditarRecorrencia();
+            }
+        });
+    };
+
+    window.salvarEdicaoRecorrencia = async function(event, recorrenciaId) {
+        event.preventDefault();
+
+        const feedback = document.getElementById('editRecFeedback');
+        const btnSalvar = event.target.querySelector('button[type="submit"]');
+
+        try {
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Salvando...';
+
+            const payload = {
+                recorrencia: {
+                    descricao: document.getElementById('editRecDesc').value || null,
+                    valor: parseFloat(document.getElementById('editRecValor').value),
+                    periodicidade: document.getElementById('editRecPeriodicidade').value,
+                    dataFim: document.getElementById('editRecDataFim').value || null,
+                    dia: parseInt(document.getElementById('editRecDia').value) || null,
+                    intervalo: parseInt(document.getElementById('editRecIntervalo').value) || 1
+                },
+                // Nota: Para simplificar, não estamos editando instituições e categorias
+                // Isso pode ser adicionado posteriormente se necessário
+                instituicao: [],
+                detalhe: { categoriaUsuario_id: [] }
+            };
+
+            const res = await MainAPI.request(
+                `/registros/recorrentes/${recorrenciaId}`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            if (res.ok) {
+                feedback.textContent = '✔ Recorrência atualizada com sucesso!';
+                feedback.className = 'inst-feedback sucesso';
+                feedback.style.display = 'block';
+
+                setTimeout(() => {
+                    fecharModalEditarRecorrencia();
+                    // Recarrega a lista de recorrências
+                    _recorrentesCarregados = false;
+                    if (_instAtual) {
+                        carregarRecorrentes(_instAtual.instUsuarioId);
+                    }
+                }, 1500);
+            } else {
+                let msg = 'Erro ao atualizar recorrência.';
+                try {
+                    const errorData = await res.json();
+                    msg = errorData.message || errorData.error || msg;
+                } catch {}
+
+                feedback.textContent = `✘ ${msg}`;
+                feedback.className = 'inst-feedback erro';
+                feedback.style.display = 'block';
+                btnSalvar.disabled = false;
+                btnSalvar.innerHTML = '<i class="bx bx-save"></i> Salvar Alterações';
+            }
+        } catch (e) {
+            console.error('Erro ao salvar edição:', e);
+            feedback.textContent = '✘ Erro de conexão ao salvar.';
+            feedback.className = 'inst-feedback erro';
+            feedback.style.display = 'block';
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = '<i class="bx bx-save"></i> Salvar Alterações';
+        }
+    };
+
+    window.fecharModalEditarRecorrencia = function() {
+        const overlay = document.getElementById('editRecorrenciaModalOverlay');
+        if (overlay) {
+            overlay.remove();
+            document.body.style.overflow = '';
+        }
+    };
 
     /* ══════════════════════════════════════════════════════════
        PAGAMENTO DE FATURA
@@ -877,7 +1208,17 @@
                     if (badge) { badge.textContent = `${pct}% crédito usado`; badge.className = "inst-modal-badge" + (pct > 80 ? " vermelho" : pct > 50 ? " amarelo" : ""); }
                 }
             } else {
-                const msg = await res.text().catch(() => "Erro ao processar pagamento.");
+                let msg = "Erro ao processar pagamento.";
+                try {
+                    const errorData = await res.json();
+                    msg = errorData.message || errorData.error || msg;
+                } catch {
+                    // Se não for JSON, tenta pegar como texto
+                    try {
+                        const textMsg = await res.text();
+                        if (textMsg) msg = textMsg;
+                    } catch {}
+                }
                 if (feedback) { feedback.textContent = `✘ ${msg}`; feedback.className = "inst-feedback erro"; feedback.style.display = "block"; }
             }
         } catch (e) {

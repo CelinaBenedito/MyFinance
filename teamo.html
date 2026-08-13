@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/png" href="assets/glaceonIcon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="assets/boxicons/boxicons.js" onerror="var s=document.createElement('script');s.src='https://unpkg.com/boxicons@2.1.4/dist/boxicons.js';document.head.appendChild(s)"></script>
+    <link rel="stylesheet" href="style.css">
+    <title>Te amo</title>
+</head>
+<body>
+    <div id="p_teamo"></div>
+</body>
+</html>
+<script>
+    for(var i = 0; i<500; i++){
+        if(i % 2 == 0){
+            p_teamo.innerHTML += "Te amo<box-icon name='heart' type='solid'></box-icon>"
+        }
+        if(i % 3 == 0){
+            p_teamo.innerHTML += "Te amo <box-icon name='heart-circle' ></box-icon>"
+        }
+        
+        i++
+    }
+</script>

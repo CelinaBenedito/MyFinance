@@ -91,8 +91,19 @@ async function apiFetch(url) {
     }
 }
 
+// Cache de variáveis CSS para evitar getComputedStyle repetido no mesmo frame
+const _cssVarCache = {};
+
 function cssVar(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    if (_cssVarCache[name] !== undefined) return _cssVarCache[name];
+    const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    _cssVarCache[name] = val;
+    return val;
+}
+
+// Limpa cache de CSS vars quando o tema muda
+function invalidarCacheCssVars() {
+    Object.keys(_cssVarCache).forEach(k => delete _cssVarCache[k]);
 }
 
 function isDark() {
@@ -246,6 +257,7 @@ const _temaObserver = new MutationObserver(() => {
     clearTimeout(_temaDebounce);
     _temaDebounce = setTimeout(() => {
         if (!periodoCfg) return;
+        invalidarCacheCssVars(); // limpa cache de variáveis CSS ao trocar tema
         // Destroi todas as instâncias ApexCharts existentes
         Object.keys(graficos).forEach(id => {
             try { graficos[id].destroy(); } catch (_) {}
@@ -306,7 +318,13 @@ function atualizarSeletoresPeriodo(recarregar) {
     if (recarregar !== false) { marcarAtalhoAtivo(null); carregarDashboard(); }
 }
 
+let _dashDebounce = null;
 function carregarDashboard() {
+    clearTimeout(_dashDebounce);
+    _dashDebounce = setTimeout(_executarCarregarDashboard, 120);
+}
+
+function _executarCarregarDashboard() {
     const tipo = document.getElementById('select_tempo')?.value;
     const ano  = Number(document.getElementById('select_ano')?.value);
     if (!tipo || !ano || isNaN(ano)) return;

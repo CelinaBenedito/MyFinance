@@ -332,6 +332,21 @@
         adicionarTipo(payload, userId) {
             return postJson(`/categorias/usuario/${userId}`, { titulo: payload.titulo });
         },
+        getTodasInstituicoes() {
+            return fetchTodasPaginas("/instituicoes");
+        },
+        getTodasCategorias() {
+            return fetchTodasPaginas("/categorias");
+        },
+        criarInstituicao(nome) {
+            return postJson("/instituicoes", { nome });
+        },
+        vincularInstituicaoUsuario(instituicaoId, userId) {
+            return request(`/instituicoes/${instituicaoId}/usuarios/${userId}`, { method: "POST" });
+        },
+        vincularCategoriaUsuario(categoriaId, userId) {
+            return request(`/categorias/${categoriaId}/usuarios/${userId}`, { method: "POST" });
+        },
         buscarRegistrosPorData(userId, dataSelecionada) {
             return request(`/registros/${userId}`, { method: "GET" })
                 .then(res => {

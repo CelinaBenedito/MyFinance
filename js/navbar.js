@@ -11,47 +11,20 @@ const caixinhaN = document.getElementById("caixinhas"); // pode ser null em pág
 let ativo = false;
 
 navbar.style.width = "70px";
-home.style.display = "none";
-reg.style.display = "none";
-add.style.display = "none";
-agenda.style.display = "none";
-config.style.display = "none";
-tema.style.display = "none";
-if (caixinhaN) caixinhaN.style.display = "none";
 main.style.marginLeft = "70px";
 
 
 function sidebarFunction() {
-    console.log("Entrei na funciton", ativo)
     if (!ativo) {
         ativo = true;
-
-        navbar.style.width = "290px";
-        main.style.marginLeft = "290px";
-        home.style.display = "";
-        reg.style.display = "";
-        add.style.display = "";
-        agenda.style.display = "";
-        config.style.display = "";
-        tema.style.display = "";
-        if (caixinhaN) caixinhaN.style.display = "";
-
-        console.log("Abriu", ativo);
-
+        navbar.classList.add('sidebar--aberta');
+        navbar.style.width = "300px";
+        main.style.marginLeft = "300px";
     } else {
         ativo = false;
-
+        navbar.classList.remove('sidebar--aberta');
         navbar.style.width = "70px";
         main.style.marginLeft = "70px";
-        home.style.display = "none";
-        reg.style.display = "none";
-        add.style.display = "none";
-        agenda.style.display = "none";
-        config.style.display = "none";
-        tema.style.display = "none";
-        if (caixinhaN) caixinhaN.style.display = "none";
-
-        console.log("Fechou", ativo);
     }
 
 }
@@ -61,9 +34,10 @@ function sidebarFunction() {
     // Cria o modal de confirmação de logout dinamicamente
     const modalHtml = `
     <div id="uwLogoutOverlay" style="
-        display:none; position:fixed; inset:0; z-index:99999;
-        background:rgba(0,0,0,0.45); backdrop-filter:blur(2px);
-        align-items:center; justify-content:center;">
+        display:none; position:fixed; top:0; right:0; bottom:0; left:0; z-index:99999;
+        background:rgba(0,0,0,0.45);
+        -webkit-align-items:center; align-items:center;
+        -webkit-justify-content:center; justify-content:center;">
         <div id="uwLogoutModal" style="
             background:var(--cor-fundo-card, #fff);
             border-radius:18px;
@@ -87,7 +61,7 @@ function sidebarFunction() {
                 font-size:0.9rem; color:var(--cor-texto-secundario);
                 text-align:center; margin:0; line-height:1.55;">
                 Você será desconectado desta sessão.<br>
-                Seu perfil continuará salvo neste dispositivo.
+                Seu perfil será removido da tela inicial neste dispositivo.
             </p>
             <div style="display:flex; gap:12px; width:100%; margin-top:8px;">
                 <button id="uwLogoutCancelar" style="
@@ -135,9 +109,30 @@ function sidebarFunction() {
     });
 
     btnConf.addEventListener('click', function () {
-        // Encerra apenas a sessão atual — o perfil permanece salvo para seleção futura
+        // Mesma regra do "excluir conta": remove apenas o perfil da tela inicial/local.
+        try {
+            var usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado') || 'null');
+            var userId = usuarioLogado ? usuarioLogado.id : null;
+            if (userId !== null && userId !== undefined) {
+                var raw = localStorage.getItem('perfis');
+                var perfis = raw ? JSON.parse(raw) : [];
+                var perfisAtualizados = perfis.filter(function(p) {
+                    return p.id !== userId && String(p.id) !== String(userId);
+                });
+                var perfisJson = JSON.stringify(perfisAtualizados);
+                localStorage.setItem('perfis', perfisJson);
+                if (window.desktopBridge) {
+                    try { window.desktopBridge.savePerfis(perfisJson); } catch (_) {}
+                }
+            }
+        } catch (errPerfis) {
+            console.error('Erro ao remover perfil da lista no logout:', errPerfis);
+        }
+
         localStorage.removeItem('usuarioLogado');
-        window.location.href = 'index.html';
+        setTimeout(function () {
+            window.location.href = 'index.html';
+        }, 150);
     });
 })();
 
@@ -194,7 +189,7 @@ function sidebarFunction() {
         if (url) {
             const urlFinal = /^data:image\//i.test(url)
                 ? url
-                : `${url}${url.includes("?") ? "&" : "?"}v=${Date.now()}`;
+                : `${url}${url.includes("?") ? "&" : "?"}v=${usuarioAtual?.id || 0}`;
             uwAvatar.innerHTML = `<img src="${urlFinal}" alt="Foto de perfil" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
         } else {
             uwAvatar.innerHTML = "<i class='bx bx-user' style='font-size:1.6rem; color:var(--cor-principal);'></i>";
@@ -229,14 +224,30 @@ function sidebarFunction() {
     async function atualizarXPWidget() {
         if (!uwXp || !uwLvl || !user?.id) return;
         try {
-            const res = await fetch(`http://localhost:8080/usuarios/calculo-xp/${user.id}`);
-            if (!res.ok) {
-                uwXp.style.width = "0%";
-                uwLvl.textContent = "LVL 1";
-                return;
+            // Cache de 5 minutos no sessionStorage para evitar fetch em toda navegação
+            const cacheKey = `xp_cache_${user.id}`;
+            const cacheTs  = `xp_cache_ts_${user.id}`;
+            const cached   = sessionStorage.getItem(cacheKey);
+            const ts       = Number(sessionStorage.getItem(cacheTs) || 0);
+            const AGE_MS   = 5 * 60 * 1000; // 5 minutos
+
+            let xp;
+            if (cached !== null && (Date.now() - ts) < AGE_MS) {
+                xp = Number(cached);
+            } else {
+                const res = await fetch(`http://localhost:8080/usuarios/calculo-xp/${user.id}`);
+                if (!res.ok) {
+                    uwXp.style.width = "0%";
+                    uwLvl.textContent = "LVL 1";
+                    return;
+                }
+                xp = Number(await res.json());
+                try {
+                    sessionStorage.setItem(cacheKey, String(xp));
+                    sessionStorage.setItem(cacheTs, String(Date.now()));
+                } catch(_) {}
             }
 
-            const xp = Number(await res.json());
             const info = calcularNivelEProgresso(xp);
 
             uwXp.style.width = `${info.progresso.toFixed(2)}%`;
@@ -248,7 +259,13 @@ function sidebarFunction() {
     }
 
     window.atualizarXPWidget = atualizarXPWidget;
-    window.addEventListener("xp:refresh", atualizarXPWidget);
+    window.addEventListener("xp:refresh", () => {
+        try {
+            sessionStorage.removeItem(`xp_cache_${user?.id}`);
+            sessionStorage.removeItem(`xp_cache_ts_${user?.id}`);
+        } catch(_) {}
+        atualizarXPWidget();
+    });
     window.addEventListener("usuario:imagemAtualizada", () => {
         const usuarioAtual = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
         renderizarAvatarWidget(usuarioAtual);
@@ -256,79 +273,472 @@ function sidebarFunction() {
     atualizarXPWidget();
 })();
 
-/*---------------- Tema dark ----------------*/
-const modoSalvo = localStorage.getItem("modo");
+/*---------------- Tema dark — FAB flutuante ----------------*/
 
-if (modoSalvo === "dark") {
+// Aplica modo salvo antes do render para evitar flash
+var _modoSalvo = localStorage.getItem("modo");
+if (_modoSalvo === "dark") {
     document.body.setAttribute("data-mode", "dark");
 }
 
-const temas = document.querySelectorAll(".pf-tema-item");
-const btnEscolher = document.getElementById("btnEscolherTema");
+// ── Seletor de temas coloridos (página Configurações) ──
+var _temas = document.querySelectorAll(".pf-tema-item");
+var _temaSelecionado = "padrao";
+var _btnEscolherTema = document.getElementById("btnEscolherTema");
 
-let temaSelecionado = "padrao";
-
-temas.forEach((tema) => {
-    tema.addEventListener("click", () => {
-        temas.forEach(t => t.classList.remove("ativo"));
+_temas.forEach(function (tema) {
+    tema.addEventListener("click", function () {
+        _temas.forEach(function (t) { t.classList.remove("ativo"); });
         tema.classList.add("ativo");
-        temaSelecionado = tema.dataset.tema;
+        _temaSelecionado = tema.dataset.tema;
     });
 });
 
-document.getElementById("toggleTheme").addEventListener("click", () => {
+if (_btnEscolherTema) {
+    _btnEscolherTema.addEventListener("click", function () {
+        document.body.setAttribute("data-tema", _temaSelecionado);
+        localStorage.setItem("tema", _temaSelecionado);
+    });
+}
 
-    const modo =  document.body.getAttribute("data-mode") == "dark" ? "light" : "dark";
-    document.body.setAttribute("data-mode", modo);
-    localStorage.setItem("modo", modo);
-    atualizarIconeTema();
-    console.log("mudei")
-});
-
-window.addEventListener("DOMContentLoaded", () => {
-
-    const temaSalvo = localStorage.getItem("tema");
-    const modoSalvo = localStorage.getItem("modo");
+window.addEventListener("DOMContentLoaded", function () {
+    var temaSalvo = localStorage.getItem("tema");
+    var modoSalvo = localStorage.getItem("modo");
 
     if (temaSalvo) {
         document.body.setAttribute("data-tema", temaSalvo);
-        temas.forEach(t => {
+        _temas.forEach(function (t) {
             t.classList.remove("ativo");
-
-            if (t.dataset.tema === temaSalvo) {
-                t.classList.add("ativo");
-            }
+            if (t.dataset.tema === temaSalvo) t.classList.add("ativo");
         });
-        temaSelecionado = temaSalvo;
+        _temaSelecionado = temaSalvo;
     }
-
     if (modoSalvo) {
         document.body.setAttribute("data-mode", modoSalvo);
-        atualizarIconeTema();
-        console.log("mudei 2")
     }
 });
 
-function atualizarIconeTema() {
-    const icone = document.getElementById("icone");
-    const modoSalvo = localStorage.getItem("modo");
-    if (modoSalvo === "dark") {
-        icone.innerHTML = "<i class='bx bx-sun'></i>";
-            console.log("cheguei 2")
+// ── Botão de alternância claro/escuro (ao lado do user widget) ──
+(function () {
+    var moonSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    var sunSvg  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
-    } else {
-        icone.innerHTML = "<i class='bx bx-moon'></i>";
-            console.log("cheguei 1")
+    var styles = [
+        /* ── Botão inline (ao lado do user widget) ── */
+        "#theme-fab {",
+        "    width: 46px;",
+        "    height: 46px;",
+        "    border-radius: 50%;",
+        "    border: none;",
+        "    cursor: pointer;",
+        "    background: var(--cor-fundo-card);",
+        "    color: var(--cor-principal);",
+        "    display: flex;",
+        "    align-items: center;",
+        "    justify-content: center;",
+        "    flex-shrink: 0;",
+        "    align-self: center;",
+        "    position: relative;",
+        "    overflow: visible;",
+        "    box-shadow: 0px 4px 4px var(--sombra-caixa), 0 0 0 2px var(--cor-tinte-borda);",
+        "    transition: box-shadow 0.35s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1), color 0.35s ease;",
+        "}",
+        "#theme-fab:hover {",
+        "    box-shadow: 0px 4px 8px var(--sombra-caixa), 0 0 0 2px var(--cor-principal);",
+        "    transform: scale(1.1);",
+        "}",
+        "#theme-fab:active { transform: scale(0.92); }",
+        "body[data-mode='dark']  #theme-fab { box-shadow: 0px 4px 4px var(--sombra-caixa), 0 0 0 2px var(--cor-principal), 0 0 18px rgba(255,195,30,0.35); }",
+        "body[data-mode='dark']  #theme-fab:hover { box-shadow: 0px 4px 8px var(--sombra-caixa), 0 0 0 2px var(--cor-principal), 0 0 26px rgba(255,195,30,0.55); }",
+        /* ── Fallback fixo (páginas sem user widget) ── */
+        "#theme-fab.theme-fab--fixed {",
+        "    position: fixed;",
+        "    bottom: 28px;",
+        "    right: 28px;",
+        "    z-index: 99990;",
+        "    width: 52px;",
+        "    height: 52px;",
+        "    background: var(--cor-principal);",
+        "    color: var(--cor-texto-claro, #fff);",
+        "    align-self: unset;",
+        "    box-shadow: 0 4px 20px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);",
+        "}",
+        "body[data-mode='dark']  #theme-fab.theme-fab--fixed { box-shadow: 0 4px 24px rgba(255,195,30,0.50), 0 2px 10px rgba(0,0,0,0.35); }",
+        "body[data-mode='light'] #theme-fab.theme-fab--fixed { box-shadow: 0 4px 24px rgba(54,115,115,0.32), 0 2px 8px rgba(0,0,0,0.12); }",
+        "#theme-fab.theme-fab--fixed:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.24); }",
+        /* ── Track dos ícones ── */
+        ".theme-fab-track {",
+        "    position: relative;",
+        "    width: 22px;",
+        "    height: 22px;",
+        "}",
+        ".theme-fab-icon {",
+        "    position: absolute;",
+        "    inset: 0;",
+        "    display: flex;",
+        "    align-items: center;",
+        "    justify-content: center;",
+        "    transition: transform 0.55s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s ease;",
+        "    will-change: transform, opacity;",
+        "}",
+        /* Modo claro: lua visível, sol entra de baixo */
+        "body[data-mode='light'] .theme-fab-moon { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }",
+        "body[data-mode='light'] .theme-fab-sun  { transform: translateY(46px) rotate(180deg) scale(0.15); opacity: 0; }",
+        /* Modo escuro: sol visível, lua sai para cima */
+        "body[data-mode='dark']  .theme-fab-sun  { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }",
+        "body[data-mode='dark']  .theme-fab-moon { transform: translateY(-46px) rotate(-180deg) scale(0.15); opacity: 0; }",
+        /* ── Tooltip ── */
+        ".theme-fab-tooltip {",
+        "    position: absolute;",
+        "    bottom: calc(100% + 10px);",
+        "    left: 50%;",
+        "    transform: translateX(-50%) translateY(6px);",
+        "    white-space: nowrap;",
+        "    background: var(--cor-fundo-card, #fff);",
+        "    color: var(--cor-texto-principal, #1a1a1a);",
+        "    font-size: 0.72rem;",
+        "    font-weight: 600;",
+        "    font-family: 'Open Sans', sans-serif;",
+        "    padding: 5px 10px;",
+        "    border-radius: 7px;",
+        "    box-shadow: 0 4px 14px rgba(0,0,0,0.12);",
+        "    border: 1px solid var(--cor-tinte-borda, rgba(0,0,0,0.08));",
+        "    pointer-events: none;",
+        "    opacity: 0;",
+        "    transition: opacity 0.2s ease, transform 0.2s ease;",
+        "    z-index: 10;",
+        "}",
+        "#theme-fab:hover .theme-fab-tooltip { opacity: 1; transform: translateX(-50%) translateY(0); }"
+    ].join("\n");
 
+    var fabHtml = '<button id="theme-fab" aria-label="Alternar modo claro/escuro">'
+        + '<span class="theme-fab-track">'
+        + '<span class="theme-fab-icon theme-fab-moon">' + moonSvg + '</span>'
+        + '<span class="theme-fab-icon theme-fab-sun">'  + sunSvg  + '</span>'
+        + '</span>'
+        + '<span class="theme-fab-tooltip" id="theme-fab-tooltip"></span>'
+        + '</button>';
+
+    function atualizarTooltip() {
+        var tip = document.getElementById("theme-fab-tooltip");
+        if (!tip) return;
+        tip.textContent = document.body.getAttribute("data-mode") === "dark"
+            ? "Modo claro"
+            : "Modo escuro";
     }
-}
 
-atualizarIconeTema();
+    function injectFab() {
+        if (document.getElementById("theme-fab")) return;
+
+        var styleEl = document.createElement("style");
+        styleEl.id = "theme-fab-styles";
+        styleEl.textContent = styles;
+        document.head.appendChild(styleEl);
+
+        var userWidget = document.getElementById("userWidget");
+        if (userWidget) {
+            // Injeta inline antes do user widget
+            userWidget.insertAdjacentHTML("beforebegin", fabHtml);
+        } else {
+            // Fallback fixo para páginas sem user widget
+            document.body.insertAdjacentHTML("beforeend", fabHtml);
+            document.getElementById("theme-fab").classList.add("theme-fab--fixed");
+        }
+
+        atualizarTooltip();
+
+        document.getElementById("theme-fab").addEventListener("click", function () {
+            var atual = document.body.getAttribute("data-mode");
+            var novo  = atual === "dark" ? "light" : "dark";
+            document.body.setAttribute("data-mode", novo);
+            localStorage.setItem("modo", novo);
+            atualizarTooltip();
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", injectFab);
+    } else {
+        injectFab();
+    }
+})();
+
+/*---------------- Toast de Status de Atualização ----------------*/
+(function () {
+    // Cria toast persistente de status de atualização
+    const updateToastHtml = `
+    <div id="mf-update-toast" style="
+        position:fixed; top:80px; right:24px; z-index:99999;
+        background:var(--cor-fundo-card,#fff);
+        border:1.5px solid var(--cor-principal,#6366f1);
+        border-radius:16px;
+        box-shadow:0 12px 40px rgba(0,0,0,0.25);
+        padding:20px 24px;
+        min-width:320px; max-width:380px;
+        display:none;
+        animation:mfToastSlide 0.3s ease;">
+        <div style="display:flex; align-items:flex-start; gap:14px;">
+            <div id="mf-toast-spinner" style="
+                width:40px; height:40px; border-radius:50%;
+                border:3px solid var(--cor-tinte-borda,#e2e8f0);
+                border-top-color:var(--cor-principal,#6366f1);
+                animation:mfSpin 0.8s linear infinite;
+                flex-shrink:0;
+                margin-top:2px;">
+            </div>
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                    <h3 id="mf-toast-title" style="
+                        font-size:1rem; font-weight:700; margin:0;
+                        color:var(--cor-titulo);">
+                        Atualizando...
+                    </h3>
+                    <button id="mf-toast-close" title="Fechar" style="
+                        background:none; border:none; cursor:pointer;
+                        color:var(--cor-texto-secundario); font-size:1.3rem;
+                        padding:0; line-height:1; width:20px; height:20px;
+                        display:flex; align-items:center; justify-content:center;
+                        transition:color 0.2s;">✕</button>
+                </div>
+                <p id="mf-toast-message" style="
+                    font-size:0.85rem; color:var(--cor-texto-secundario);
+                    margin:0; line-height:1.5;">
+                    Baixando nova versão...
+                </p>
+                <div id="mf-toast-progress-wrap" style="
+                    margin-top:12px; width:100%; height:6px;
+                    background:var(--cor-tinte-borda,#e2e8f0);
+                    border-radius:3px; overflow:hidden;">
+                    <div id="mf-toast-progress-bar" style="
+                        height:100%; width:0%; border-radius:3px;
+                        background:linear-gradient(90deg, var(--cor-principal,#6366f1), var(--cor-principal-hover,#4f46e5));
+                        transition:width 0.4s ease;">
+                    </div>
+                </div>
+                <span id="mf-toast-percentage" style="
+                    display:block; margin-top:6px; font-size:0.75rem;
+                    color:var(--cor-texto-secundario); font-weight:600;">
+                    0%
+                </span>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes mfToastSlide {
+            from { opacity:0; transform:translateX(100px); }
+            to   { opacity:1; transform:translateX(0); }
+        }
+        @keyframes mfSpin {
+            0%   { transform:rotate(0deg); }
+            100% { transform:rotate(360deg); }
+        }
+        #mf-update-toast.success #mf-toast-spinner {
+            border:3px solid transparent;
+            background:var(--green-500,#22c55e);
+            display:flex; align-items:center; justify-content:center;
+            animation:none;
+        }
+        #mf-update-toast.success #mf-toast-spinner::after {
+            content:'✓';
+            color:#fff;
+            font-size:1.4rem;
+            font-weight:700;
+        }
+        #mf-toast-close:hover {
+            color:var(--red-600,#dc2626);
+        }
+    </style>`;
+
+    document.body.insertAdjacentHTML('beforeend', updateToastHtml);
+
+    const toast = document.getElementById('mf-update-toast');
+    const toastTitle = document.getElementById('mf-toast-title');
+    const toastMessage = document.getElementById('mf-toast-message');
+    const toastProgress = document.getElementById('mf-toast-progress-bar');
+    const toastPercentage = document.getElementById('mf-toast-percentage');
+    const toastSpinner = document.getElementById('mf-toast-spinner');
+    const toastClose = document.getElementById('mf-toast-close');
+
+    // Botão X para fechar manualmente
+    toastClose.addEventListener('click', function() {
+        hideUpdateToast();
+    });
+
+    // Verifica se há atualização em progresso ao carregar a página
+    async function checkUpdateInProgress() {
+        const updateStatus = localStorage.getItem('mf-update-status');
+        if (updateStatus) {
+            const status = JSON.parse(updateStatus);
+
+            // Verifica se a versão armazenada mudou (indica que a atualização foi concluída)
+            try {
+                const res = await fetch('http://localhost:8080/api/update/check');
+                if (res.ok) {
+                    const info = await res.json();
+                    const currentVersion = info.currentVersion;
+                    const storedVersion = localStorage.getItem('mf-app-version');
+
+                    if (currentVersion && storedVersion && currentVersion !== storedVersion) {
+                        // Versão mudou! A atualização foi bem-sucedida
+                        localStorage.setItem('mf-app-version', currentVersion);
+                        localStorage.removeItem('mf-update-status');
+                        return; // Não mostra o toast
+                    }
+
+                    // Armazena a versão atual se ainda não foi armazenada
+                    if (currentVersion && !storedVersion) {
+                        localStorage.setItem('mf-app-version', currentVersion);
+                    }
+                }
+            } catch (e) {
+                // Se falhar ao buscar a versão, continua com a lógica de timeout
+            }
+
+            // Se a versão não mudou mas já passou tempo suficiente, limpa o status
+            if (status.timestamp) {
+                const elapsed = Date.now() - status.timestamp;
+                if (elapsed > 60000) { // 60 segundos
+                    localStorage.removeItem('mf-update-status');
+                    return;
+                }
+            }
+
+            if (status.inProgress) {
+                showUpdateToast(status.title, status.message, status.progress);
+            }
+        }
+    }
+
+    function showUpdateToast(title, message, progress) {
+        toast.style.display = 'block';
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+        toastProgress.style.width = progress + '%';
+        toastPercentage.textContent = Math.round(progress) + '%';
+
+        // Salva o estado no localStorage com timestamp
+        localStorage.setItem('mf-update-status', JSON.stringify({
+            inProgress: true,
+            title: title,
+            message: message,
+            progress: progress,
+            timestamp: Date.now()
+        }));
+    }
+
+    function updateToastProgress(progress) {
+        toastProgress.style.width = progress + '%';
+        toastPercentage.textContent = Math.round(progress) + '%';
+
+        const status = JSON.parse(localStorage.getItem('mf-update-status') || '{}');
+        status.progress = progress;
+        localStorage.setItem('mf-update-status', JSON.stringify(status));
+    }
+
+    function completeUpdateToast() {
+        toast.classList.add('success');
+        toastTitle.textContent = 'Atualização Concluída!';
+        toastMessage.textContent = 'Reiniciando aplicação...';
+        toastProgress.style.width = '100%';
+        toastPercentage.textContent = '100%';
+
+        localStorage.removeItem('mf-update-status');
+
+        setTimeout(function() {
+            toast.style.display = 'none';
+            toast.classList.remove('success');
+        }, 3000);
+    }
+
+    function hideUpdateToast() {
+        toast.style.display = 'none';
+        localStorage.removeItem('mf-update-status');
+    }
+
+    // Exporta funções globalmente
+    window._showUpdateToast = showUpdateToast;
+    window._updateToastProgress = updateToastProgress;
+    window._completeUpdateToast = completeUpdateToast;
+    window._hideUpdateToast = hideUpdateToast;
+
+    // Verifica ao carregar
+    checkUpdateInProgress();
+})();
+
+/*---------------- Ícone de Notificações ----------------*/
+(function () {
+    // Cria o ícone de notificações dinamicamente
+    const notificationIconHtml = `
+    <div id="mf-notification-icon" style="
+        position:relative; cursor:pointer; margin-right:12px;
+        width:40px; height:40px; border-radius:50%;
+        display:flex; align-items:center; justify-content:center;
+        background:var(--cor-fundo-card,#fff);
+        border:1.5px solid var(--cor-tinte-borda,#e2e8f0);
+        transition:all 0.2s ease;">
+        <i class='bx bx-bell' style="font-size:1.3rem; color:var(--cor-texto-principal);"></i>
+        <span id="mf-notification-badge" style="
+            position:absolute; top:-4px; right:-4px;
+            background:var(--red-600,#dc2626); color:#fff;
+            border-radius:50%; width:20px; height:20px;
+            display:none; align-items:center; justify-content:center;
+            font-size:0.7rem; font-weight:700; border:2px solid var(--cor-fundo-pagina,#fff);">
+            0
+        </span>
+    </div>
+    <style>
+        #mf-notification-icon:hover {
+            background:var(--cor-hover,#f1f5f9);
+            border-color:var(--cor-principal,#6366f1);
+        }
+        #mf-notification-icon:hover i {
+            color:var(--cor-principal,#6366f1);
+        }
+    </style>`;
+
+    // Injeta o ícone ao lado do user widget em todas as páginas
+    function injectNotificationIcon() {
+        const topActions = document.querySelector('.top-actions');
+        if (topActions) {
+            topActions.insertAdjacentHTML('afterbegin', notificationIconHtml);
+
+            const notifIcon = document.getElementById('mf-notification-icon');
+            if (notifIcon) {
+                notifIcon.addEventListener('click', function() {
+                    window._showUpdateNotifications();
+                });
+            }
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectNotificationIcon);
+    } else {
+        injectNotificationIcon();
+    }
+
+    // Função global para atualizar contador de notificações
+    window._updateNotificationBadge = function(count) {
+        const badge = document.getElementById('mf-notification-badge');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    };
+})();
 
 /*---------------- Auto-Update: verificação e notificação ----------------*/
 (function () {
     const CHECK_INTERVAL_MS = 30 * 60 * 1000; // 30 minutos
+    const SNOOZE_DURATION_MS = 12 * 60 * 60 * 1000; // 12 horas
     const API_BASE = 'http://localhost:8080';
+
+    let _updateInfo = null;
+    let _isDismissed = false;
 
     // ── Injeta o banner de atualização no DOM ──
     const bannerHtml = `
@@ -359,6 +769,21 @@ atualizarIconeTema();
         <p style="font-size:0.83rem;color:var(--cor-texto-secundario);margin:0 0 14px;line-height:1.5;">
             Clique em <strong>Atualizar agora</strong> para baixar e reiniciar automaticamente.
         </p>
+        <button id="mf-update-toggle" style="
+            display:none;align-items:center;gap:6px;background:none;border:none;padding:0;
+            margin:0 0 10px;cursor:pointer;font-size:0.82rem;font-weight:600;
+            color:var(--cor-principal,#6366f1);">
+            <span id="mf-update-toggle-text">Mostrar mais detalhes</span>
+            <span id="mf-update-arrow" aria-hidden="true" style="font-size:0.9rem;line-height:1;transition:transform 0.18s ease;">
+                <i class='bx bx-chevron-down'></i>
+            </span>
+        </button>
+        <div id="mf-update-details" style="
+            display:none;max-height:160px;overflow:auto;
+            border:1px solid var(--cor-tinte-borda,#e2e8f0);border-radius:8px;
+            padding:10px 12px;margin:0 0 12px;
+            background:var(--cor-fundo-pagina,#f8fafc);font-size:0.8rem;
+            color:var(--cor-texto-secundario);line-height:1.45;white-space:pre-line;"></div>
         <div style="display:flex;gap:8px;">
             <button id="mf-update-btn" style="
                 flex:1;padding:9px 0;border-radius:9px;border:none;cursor:pointer;
@@ -404,41 +829,103 @@ atualizarIconeTema();
     const btnDepois     = document.getElementById('mf-update-later');
     const btnFechar     = document.getElementById('mf-update-close');
     const versionsEl    = document.getElementById('mf-update-versions');
+    const btnDetalhes   = document.getElementById('mf-update-toggle');
+    const txtDetalhes   = document.getElementById('mf-update-toggle-text');
+    const setaDetalhes  = document.getElementById('mf-update-arrow');
+    const detailsEl     = document.getElementById('mf-update-details');
     const progressArea  = document.getElementById('mf-update-progress');
     const progressBar   = document.getElementById('mf-update-bar');
     const statusEl      = document.getElementById('mf-update-status');
 
     let _downloadUrl = null;
+    let _showingDetails = false;
+
+    function setDetalhesVisiveis(visible) {
+        _showingDetails = !!visible;
+        detailsEl.style.display = _showingDetails ? 'block' : 'none';
+        setaDetalhes.style.transform = _showingDetails ? 'rotate(180deg)' : 'rotate(0deg)';
+        txtDetalhes.textContent = _showingDetails
+            ? 'Ocultar detalhes'
+            : 'Mostrar mais detalhes';
+    }
 
     function mostrarBanner(info) {
+        _updateInfo = info;
         versionsEl.textContent = 'Atual: v' + info.currentVersion + '  →  Nova: v' + info.latestVersion;
+        _downloadUrl = info.downloadUrl || null;
+
+        const releaseNotes = (info.releaseNotes || '').trim();
+        if (releaseNotes) {
+            detailsEl.textContent = releaseNotes;
+            btnDetalhes.style.display = 'inline-flex';
+            setDetalhesVisiveis(false);
+        } else {
+            detailsEl.textContent = '';
+            btnDetalhes.style.display = 'none';
+            setDetalhesVisiveis(false);
+        }
+
         banner.style.display = 'block';
+
+        // Remove a notificação do badge quando o banner é mostrado
+        if (_isDismissed) {
+            _isDismissed = false;
+            localStorage.removeItem('mf-update-dismissed');
+            window._updateNotificationBadge(0);
+        }
     }
 
     function ocultarBanner() {
         banner.style.display = 'none';
     }
 
-    btnFechar.addEventListener('click', ocultarBanner);
-    btnDepois.addEventListener('click', ocultarBanner);
+    function dismissarAtualizacao() {
+        _isDismissed = true;
+        localStorage.setItem('mf-update-dismissed', 'true');
+        ocultarBanner();
+
+        // Adiciona ao contador de notificações
+        if (_updateInfo) {
+            window._updateNotificationBadge(1);
+        }
+    }
+
+    function adiarAtualizacao() {
+        localStorage.setItem('mf-update-snoozed', Date.now().toString());
+        ocultarBanner();
+    }
+
+    btnFechar.addEventListener('click', dismissarAtualizacao);
+    btnDepois.addEventListener('click', adiarAtualizacao);
+    btnDetalhes.addEventListener('click', function () {
+        setDetalhesVisiveis(!_showingDetails);
+    });
 
     btnAtualizar.addEventListener('click', async function () {
         if (!_downloadUrl) return;
 
+        // Desabilita botões e esconde o banner
         btnAtualizar.disabled = true;
         btnDepois.disabled    = true;
         btnFechar.disabled    = true;
-        progressArea.style.display = 'block';
+        ocultarBanner();
+
+        // Mostra toast de atualização persistente
+        window._showUpdateToast('Atualizando MyFinance', 'Iniciando download da nova versão...', 0);
 
         // Simula progresso visual enquanto o download ocorre no backend
         let pct = 0;
         const interval = setInterval(function() {
-            pct = Math.min(pct + Math.random() * 8, 85);
-            progressBar.style.width = pct + '%';
-        }, 400);
+            pct = Math.min(pct + Math.random() * 5, 85);
+            window._updateToastProgress(pct);
+        }, 500);
 
         try {
-            statusEl.textContent = 'Baixando atualização...';
+            // Aguarda 800ms para dar tempo do toast aparecer
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            window._showUpdateToast('Baixando Atualização', 'Fazendo download do servidor...', pct);
+
             const res = await fetch(API_BASE + '/api/update/apply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -448,19 +935,36 @@ atualizarIconeTema();
             clearInterval(interval);
 
             if (res.ok) {
-                progressBar.style.width = '100%';
-                statusEl.textContent = 'Atualização baixada! Reiniciando a aplicação...';
+                window._showUpdateToast('Download Concluído', 'Preparando atualização...', 90);
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                window._completeUpdateToast();
+
+                // Monitora se a aplicação realmente fechou
+                setTimeout(function() {
+                    // Se ainda estiver aqui após 10s, mostra mensagem
+                    window._showUpdateToast('Aguardando Fechamento', 'Aguarde o aplicativo reiniciar...', 100);
+                }, 10000);
             } else {
                 throw new Error('Falha na requisição: ' + res.status);
             }
         } catch (e) {
             clearInterval(interval);
-            progressBar.style.width = '0%';
-            progressBar.style.background = '#ef4444';
-            statusEl.textContent = 'Erro ao atualizar. Tente novamente.';
+            window._hideUpdateToast();
+
+            // Reativa botões do banner
             btnAtualizar.disabled = false;
             btnDepois.disabled    = false;
             btnFechar.disabled    = false;
+            mostrarBanner(_updateInfo);
+
+            // Mostra erro no banner original
+            progressBar.style.width = '0%';
+            progressBar.style.background = '#ef4444';
+            statusEl.textContent = 'Erro ao atualizar. Tente novamente.';
+            progressArea.style.display = 'block';
+
             console.error('[Update] Erro:', e);
         }
     });
@@ -471,14 +975,49 @@ atualizarIconeTema();
             const res = await fetch(API_BASE + '/api/update/check');
             if (!res.ok) return;
             const info = await res.json();
+
             if (info.hasUpdate && info.downloadUrl) {
-                _downloadUrl = info.downloadUrl;
+                _updateInfo = info;
+
+                // Verifica se o usuário clicou em X (dismissed)
+                const dismissed = localStorage.getItem('mf-update-dismissed');
+                if (dismissed === 'true') {
+                    _isDismissed = true;
+                    window._updateNotificationBadge(1);
+                    return; // Não mostra o banner automaticamente
+                }
+
+                // Verifica se o usuário clicou em "depois" recentemente
+                const snoozed = localStorage.getItem('mf-update-snoozed');
+                if (snoozed) {
+                    const snoozedTime = parseInt(snoozed, 10);
+                    const elapsed = Date.now() - snoozedTime;
+                    if (elapsed < SNOOZE_DURATION_MS) {
+                        return; // Ainda no período de adiamento
+                    }
+                    localStorage.removeItem('mf-update-snoozed');
+                }
+
+                // Mostra o banner se não foi dismissed nem snoozed
                 mostrarBanner(info);
+            } else {
+                // Se não há atualização, limpa o dismissed e badge
+                _isDismissed = false;
+                _updateInfo = null;
+                localStorage.removeItem('mf-update-dismissed');
+                window._updateNotificationBadge(0);
             }
         } catch (e) {
             // Silencioso: sem internet ou backend ainda não inicializado
         }
     }
+
+    // ── Função para mostrar notificações quando clicar no sino ──
+    window._showUpdateNotifications = function() {
+        if (_updateInfo && _isDismissed) {
+            mostrarBanner(_updateInfo);
+        }
+    };
 
     // Primeira verificação após 10s (dá tempo ao Spring Boot inicializar)
     setTimeout(verificarAtualizacao, 10000);

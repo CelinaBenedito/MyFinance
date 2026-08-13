@@ -164,6 +164,31 @@ function _renderTagPicker(id) {
         });
         ddEl.appendChild(btn);
     });
+
+    // Botão "Criar novo" para pickers de inst e cat
+    const _isInstPicker = (id === 'inst' || id === 'm-inst');
+    const _isCatPicker  = (id === 'cat'  || id === 'm-cat');
+    if (_isInstPicker || _isCatPicker) {
+        const sep = document.createElement('div');
+        sep.className = 'ar-tp-separator';
+        ddEl.appendChild(sep);
+
+        const newBtn = document.createElement('button');
+        newBtn.type = 'button';
+        newBtn.className = 'ar-tp-option ar-tp-new-btn';
+        const newCheck = document.createElement('span');
+        newCheck.className = 'ar-tp-opt-check ar-tp-new-icon';
+        newCheck.textContent = '+';
+        newBtn.appendChild(newCheck);
+        newBtn.appendChild(document.createTextNode(
+            _isInstPicker ? 'Nova instituição...' : 'Nova categoria...'
+        ));
+        newBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            _abrirFormularioNova(id);
+        });
+        ddEl.appendChild(newBtn);
+    }
 }
 
 // Close all dropdowns when clicking outside
@@ -173,6 +198,263 @@ document.addEventListener('click', () => {
         if (dd.previousElementSibling) dd.previousElementSibling.classList.remove('open');
     });
 });
+
+/* ══════════════════════════════════════════════════
+   Vincular / Criar inline de Instituição / Categoria
+══════════════════════════════════════════════════ */
+
+// Passo 1: mostra as disponíveis no banco que o usuário ainda não vinculou
+async function _abrirFormularioNova(id) {
+    const ddEl = document.getElementById('tp-dd-' + id);
+    if (!ddEl) return;
+    const isInst = (id === 'inst' || id === 'm-inst');
+
+    ddEl.innerHTML = `<div class="ar-tp-new-form" style="text-align:center;padding:12px 0;">
+        <span style="color:var(--cor-texto-secundario);font-size:0.88rem;">Carregando...</span>
+    </div>`;
+
+    try {
+        let disponiveis = [];
+        if (isInst) {
+            const [todas, vinculadas] = await Promise.all([
+                MainAPI.getTodasInstituicoes(),
+                MainAPI.getInstituicoes(userId)
+            ]);
+            const vinculadasIds = new Set(vinculadas.map(v => String(v.intituicao?.id)));
+            disponiveis = todas
+                .filter(i => !vinculadasIds.has(String(i.id)))
+                .map(i => ({ id: i.id, label: i.nome }));
+        } else {
+            const [todas, vinculadas] = await Promise.all([
+                MainAPI.getTodasCategorias(),
+                MainAPI.getTipos(userId)
+            ]);
+            const vinculadasIds = new Set(vinculadas.map(c => String(c.categoria?.id)));
+            disponiveis = todas
+                .filter(c => !vinculadasIds.has(String(c.id)))
+                .map(c => ({ id: c.id, label: c.titulo }));
+        }
+
+        ddEl.innerHTML = '';
+
+        if (disponiveis.length > 0) {
+            const header = document.createElement('div');
+            header.style.cssText = 'padding:6px 10px 2px;font-size:0.75rem;font-weight:700;color:var(--cor-texto-secundario);text-transform:uppercase;letter-spacing:0.5px;';
+            header.textContent = isInst ? 'Vincular instituição existente' : 'Vincular categoria existente';
+            ddEl.appendChild(header);
+
+            disponiveis.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'ar-tp-option';
+                const icon = document.createElement('span');
+                icon.className = 'ar-tp-opt-check ar-tp-new-icon';
+                icon.textContent = '+';
+                btn.appendChild(icon);
+                btn.appendChild(document.createTextNode(item.label));
+                btn.addEventListener('click', async e => {
+                    e.stopPropagation();
+                    await _vincularESelecionarExistente(id, item.id, item.label, isInst);
+                });
+                ddEl.appendChild(btn);
+            });
+
+            const sep = document.createElement('div');
+            sep.className = 'ar-tp-separator';
+            ddEl.appendChild(sep);
+        }
+
+        // Botão criar nova (personalizada)
+        const newBtn = document.createElement('button');
+        newBtn.type = 'button';
+        newBtn.className = 'ar-tp-option ar-tp-new-btn';
+        const newIcon = document.createElement('span');
+        newIcon.className = 'ar-tp-opt-check ar-tp-new-icon';
+        newIcon.textContent = '+';
+        newBtn.appendChild(newIcon);
+        newBtn.appendChild(document.createTextNode(
+            isInst ? 'Criar nova instituição...' : 'Criar nova categoria...'
+        ));
+        newBtn.addEventListener('click', e => { e.stopPropagation(); _mostrarFormCriarNova(id, isInst); });
+        ddEl.appendChild(newBtn);
+
+        // Botão voltar
+        const backBtn = document.createElement('button');
+        backBtn.type = 'button';
+        backBtn.className = 'ar-tp-option';
+        backBtn.style.cssText = 'color:var(--cor-texto-secundario);font-size:0.85rem;';
+        backBtn.textContent = '← Voltar';
+        backBtn.addEventListener('click', e => { e.stopPropagation(); _renderTagPicker(id); });
+        ddEl.appendChild(backBtn);
+
+    } catch (err) {
+        console.error('[_abrirFormularioNova]', err);
+        alerta('Erro ao carregar opções disponíveis');
+        _renderTagPicker(id);
+    }
+}
+
+// Passo 2a: vincular uma existente do banco e selecioná-la no picker
+async function _vincularESelecionarExistente(id, globalId, label, isInst) {
+    if (!userId) return alerta('Nenhum usuário logado');
+    const ddEl = document.getElementById('tp-dd-' + id);
+    if (ddEl) ddEl.innerHTML = `
+        <div class="ar-tp-new-form" style="text-align:center;padding:14px 0;">
+            <span style="color:var(--cor-principal);font-size:0.9rem;">
+                Vinculando ${isInst ? 'instituição' : 'categoria'}...
+            </span>
+        </div>`;
+    try {
+        let novoId, novoLabel;
+        if (isInst) {
+            const res = await MainAPI.vincularInstituicaoUsuario(globalId, userId);
+            if (!res.ok) { const c = await res.json().catch(()=>({})); throw new Error(c.message || `HTTP ${res.status}`); }
+            const data = await res.json();
+            novoId = data.id; novoLabel = data.intituicao?.nome || label;
+        } else {
+            const res = await MainAPI.vincularCategoriaUsuario(globalId, userId);
+            if (!res.ok) { const c = await res.json().catch(()=>({})); throw new Error(c.message || `HTTP ${res.status}`); }
+            const data = await res.json();
+            novoId = data.id; novoLabel = data.categoria?.titulo || label;
+        }
+        const twin = id.startsWith('m-') ? id.slice(2) : 'm-' + id;
+        [id, twin].forEach(pid => {
+            const st = _tp[pid];
+            if (!st) return;
+            if (!st.options.some(o => String(o.id) === String(novoId)))
+                st.options.push({ id: novoId, label: novoLabel });
+        });
+        _toggleTagItem(id, novoId, novoLabel);
+        if (ddEl) ddEl.style.display = 'none';
+        const display = ddEl ? ddEl.previousElementSibling : null;
+        if (display) display.classList.remove('open');
+        alerta(`✔ ${isInst ? 'Instituição' : 'Categoria'} "${novoLabel}" vinculada e selecionada!`, 3000);
+    } catch (err) {
+        console.error('[vincularESelecionarExistente]', err);
+        alerta(`Erro ao vincular: ${err.message}`);
+        _renderTagPicker(id);
+    }
+}
+
+// Passo 2b: mostrar formulário para criar uma personalizada (não existe no banco)
+function _mostrarFormCriarNova(id, isInst) {
+    const ddEl = document.getElementById('tp-dd-' + id);
+    if (!ddEl) return;
+    const placeholder = isInst ? 'Nome da instituição' : 'Nome da categoria';
+    const maxLen = isInst ? 50 : 30;
+
+    ddEl.innerHTML = `
+        <div class="ar-tp-new-form">
+            <input type="text" id="tp-new-input-${id}"
+                   class="ar-tp-new-input"
+                   placeholder="${placeholder}"
+                   maxlength="${maxLen}"
+                   autocomplete="off">
+            <div class="ar-tp-new-btns">
+                <button type="button" class="ar-tp-new-confirm">Criar</button>
+                <button type="button" class="ar-tp-new-cancel">← Voltar</button>
+            </div>
+        </div>`;
+
+    const input = document.getElementById(`tp-new-input-${id}`);
+    if (input) setTimeout(() => input.focus(), 50);
+
+    ddEl.querySelector('.ar-tp-new-confirm').addEventListener('click', async e => {
+        e.stopPropagation();
+        const nome = input ? input.value.trim() : '';
+        if (!nome) return alerta(isInst ? 'Digite o nome da instituição' : 'Digite o nome da categoria');
+        await _criarESelecionarNova(id, nome);
+    });
+    ddEl.querySelector('.ar-tp-new-cancel').addEventListener('click', e => {
+        e.stopPropagation();
+        _abrirFormularioNova(id);
+    });
+    if (input) {
+        input.addEventListener('keydown', async e => {
+            e.stopPropagation();
+            if (e.key === 'Enter') { const nome = input.value.trim(); if (nome) await _criarESelecionarNova(id, nome); }
+            else if (e.key === 'Escape') _abrirFormularioNova(id);
+        });
+        input.addEventListener('click', e => e.stopPropagation());
+    }
+}
+
+async function _criarESelecionarNova(id, nome) {
+    if (!userId) return alerta('Nenhum usuário logado');
+
+    const ddEl  = document.getElementById('tp-dd-' + id);
+    const isInst = (id === 'inst' || id === 'm-inst');
+
+    // Spinner enquanto cria
+    if (ddEl) ddEl.innerHTML = `
+        <div class="ar-tp-new-form" style="text-align:center;padding:14px 0;">
+            <span style="color:var(--cor-principal);font-size:0.9rem;">
+                Criando ${isInst ? 'instituição' : 'categoria'}...
+            </span>
+        </div>`;
+
+    try {
+        let novoId, novoLabel;
+
+        if (isInst) {
+            // 1. Criar a instituição global
+            const resInst = await MainAPI.criarInstituicao(nome);
+            if (!resInst.ok) {
+                const corpo = await resInst.json().catch(() => ({}));
+                throw new Error(corpo.message || `HTTP ${resInst.status}`);
+            }
+            const instData = await resInst.json();
+            const instituicaoId = instData.id;
+
+            // 2. Vincular ao usuário
+            const resLink = await MainAPI.vincularInstituicaoUsuario(instituicaoId, userId);
+            if (!resLink.ok) {
+                const corpo = await resLink.json().catch(() => ({}));
+                throw new Error(corpo.message || `HTTP ${resLink.status}`);
+            }
+            const linkData = await resLink.json();
+            novoId    = linkData.id;                      // instUsuario_id
+            novoLabel = linkData.intituicao?.nome || nome;
+
+        } else {
+            // Criar categoria e já associar ao usuário (atômico)
+            const resCat = await MainAPI.adicionarTipo({ titulo: nome }, userId);
+            if (!resCat.ok) {
+                const corpo = await resCat.json().catch(() => ({}));
+                throw new Error(corpo.message || `HTTP ${resCat.status}`);
+            }
+            const catData = await resCat.json();
+            novoId    = catData.id;                       // categoriaUsuario_id
+            novoLabel = catData.categoria?.titulo || nome;
+        }
+
+        // Adicionar às opções do picker atual e do picker irmão
+        const twin = id.startsWith('m-') ? id.slice(2) : 'm-' + id;
+        [id, twin].forEach(pickerId => {
+            const st = _tp[pickerId];
+            if (!st) return;
+            if (!st.options.some(o => String(o.id) === String(novoId))) {
+                st.options.push({ id: novoId, label: novoLabel });
+            }
+        });
+
+        // Selecionar automaticamente no picker atual
+        // (_toggleTagItem chama _renderTagPicker internamente e reconstrói o dropdown)
+        _toggleTagItem(id, novoId, novoLabel);
+
+        // Fechar dropdown (conteúdo já foi reconstruído pelo _renderTagPicker acima)
+        if (ddEl) ddEl.style.display = 'none';
+        const display = ddEl ? ddEl.previousElementSibling : null;
+        if (display) display.classList.remove('open');
+
+        alerta(`✔ ${isInst ? 'Instituição' : 'Categoria'} "${novoLabel}" criada e selecionada!`, 3000);
+
+    } catch (err) {
+        console.error('[criarESelecionarNova]', err);
+        alerta(`Erro ao criar ${isInst ? 'instituição' : 'categoria'}: ${err.message}`);
+        _renderTagPicker(id); // Restaura o dropdown normal
+    }
+}
 
 /* ── Institution amounts handler ── */
 function _onInstChange(pickerId, selected) {
@@ -520,6 +802,14 @@ function gerarInformacoes() {
     const selectTipo = document.getElementById('select_tipo');
     if (selectTipo) selectTipo.addEventListener('change', _onTipoChange);
 
+    // Atualiza saldo display quando o tipo de movimento muda
+    // (crédito mostra limite disponível; débito mostra saldo de caixa)
+    const selectMov = document.getElementById('select_movimento');
+    if (selectMov) selectMov.addEventListener('change', () => {
+        const selectedInst = _tp['inst']?.selected || [];
+        if (selectedInst.length === 1) atualizarSaldoDisplay(selectedInst[0].id);
+    });
+
     // Load data from API
     gerarCategorias();
     gerarInstituicao();
@@ -626,10 +916,11 @@ async function registrar() {
         if (!algumValor) return alerta("Informe o valor para cada instituição");
     }
 
-    // Verificar saldo quando o tipo exige débito
-    if ((tipo === 'Gasto' || tipo === 'Transferencia') && selectedInst.length === 1) {
+    // Verificar saldo quando o tipo exige débito (exceto crédito, que não debita imediatamente)
+    // Usa saldo-debito para não considerar o limite de crédito em transações de débito
+    if ((tipo === 'Gasto' || tipo === 'Transferencia') && selectedInst.length === 1 && movimento !== 'Credito') {
         try {
-            const resSaldo = await fetch(`http://localhost:8080/instituicoes/saldo/${Number(selectedInst[0].id)}`);
+            const resSaldo = await fetch(`http://localhost:8080/instituicoes/saldo-debito/${Number(selectedInst[0].id)}`);
             if (resSaldo.ok) {
                 const saldo = await resSaldo.json();
                 if (Number(saldo) < valor)

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -29,6 +29,7 @@
         })();
     </script>
 
+    <link rel="icon" type="image/png" href="assets/glaceonIcon.png">
     <title>Escolher perfil</title>
 </head>
 
@@ -52,8 +53,8 @@
 <script>
     (function () {
         var _lista = document.getElementById("listaUsuarios");
-        // Referência CORRETA: o <a href="cadastrar.html"> é filho DIRETO de _lista.
-        // Usar .addUsuario causava NotFoundError silencioso porque ele é neto (está dentro do <a>).
+        // Refer�ncia CORRETA: o <a href="cadastrar.html"> � filho DIRETO de _lista.
+        // Usar .addUsuario causava NotFoundError silencioso porque ele � neto (est� dentro do <a>).
         var _btnAdd = _lista.querySelector("a[href='cadastrar.html']") || _lista.lastElementChild;
         var _API = "http://localhost:8080";
         var _jaRenderizou = false;
@@ -81,7 +82,7 @@
                     localStorage.setItem("usuarioLogado", JSON.stringify(perfil));
                     window.location.href = "dashboard.html";
                 });
-                // insertBefore precisa de filho DIRETO como referência
+                // insertBefore precisa de filho DIRETO como refer�ncia
                 _lista.insertBefore(card, _btnAdd);
             });
             _jaRenderizou = true;
@@ -96,7 +97,7 @@
             _lista.insertBefore(av, _btnAdd);
         }
 
-        // ── 1. localStorage (síncrono, como os temas) ───────────────────────
+        // -- 1. localStorage (s�ncrono, como os temas) -----------------------
         try {
             var raw = localStorage.getItem("perfis");
             var lsData = raw ? JSON.parse(raw) : [];
@@ -107,9 +108,9 @@
             _mostrarAviso("Carregando perfis...");
         }
 
-        // ── 2. Polling para desktopBridge ────────────────────────────────────
-        // Após Worker.State.SUCCEEDED o JavaFX injeta window.desktopBridge.
-        // loadPerfis() é uma chamada Java síncrona — sem async, sem Promise.
+        // -- 2. Polling para desktopBridge ------------------------------------
+        // Ap�s Worker.State.SUCCEEDED o JavaFX injeta window.desktopBridge.
+        // loadPerfis() � uma chamada Java s�ncrona � sem async, sem Promise.
         (function poll(tentativa) {
             if (window.desktopBridge) {
                 try {
@@ -119,21 +120,21 @@
                         try { localStorage.setItem("perfis", json); } catch (_) {}
                         _renderPerfis(data);
                     } else if (!_jaRenderizou) {
-                        _mostrarAviso("Nenhum perfil salvo. Faça login ou cadastre-se.");
+                        _mostrarAviso("Nenhum perfil salvo. Fa�a login ou cadastre-se.");
                     }
                 } catch (e) {
-                    if (!_jaRenderizou) _mostrarAviso("Nenhum perfil salvo. Faça login ou cadastre-se.");
+                    if (!_jaRenderizou) _mostrarAviso("Nenhum perfil salvo. Fa�a login ou cadastre-se.");
                 }
                 return;
             }
             if (tentativa < 30) {
                 setTimeout(function () { poll(tentativa + 1); }, 100);
             } else if (!_jaRenderizou) {
-                _mostrarAviso("Nenhum perfil salvo. Faça login ou cadastre-se.");
+                _mostrarAviso("Nenhum perfil salvo. Fa�a login ou cadastre-se.");
             }
         }(0));
 
-        // ── 3. Atalho: chamado diretamente pelo Java (DesktopApp) ───────────
+        // -- 3. Atalho: chamado diretamente pelo Java (DesktopApp) -----------
         window._carregarPerfisViaBridge = function (jsonString) {
             try {
                 var data = JSON.parse(jsonString || "[]");

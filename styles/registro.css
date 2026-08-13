@@ -494,6 +494,88 @@
     flex-shrink: 0;
 }
 
+/* ── Separador e botão "criar novo" no tag picker ── */
+.ar-tp-separator {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--cor-tinte-borda);
+    margin: 4px 2px;
+}
+
+.ar-tp-new-btn {
+    grid-column: 1 / -1;
+    color: var(--cor-principal) !important;
+    font-weight: 700 !important;
+    opacity: 0.85;
+    border: 1px dashed var(--cor-principal) !important;
+    border-radius: 8px !important;
+    margin-top: 2px;
+}
+.ar-tp-new-btn:hover {
+    opacity: 1;
+    background: var(--cor-tinte-suave) !important;
+}
+
+.ar-tp-new-icon {
+    border-color: currentColor;
+    font-size: 1rem;
+    font-weight: 700;
+    border-width: 1.5px;
+}
+
+/* ── Formulário inline de criação ── */
+.ar-tp-new-form {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 6px 2px;
+}
+
+.ar-tp-new-input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 2px solid var(--cor-principal);
+    border-radius: 8px;
+    background: var(--cor-fundo-card);
+    color: var(--cor-texto-principal);
+    font-size: 0.92rem;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.ar-tp-new-input:focus {
+    border-color: var(--cor-titulo);
+}
+
+.ar-tp-new-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.ar-tp-new-btns button {
+    flex: 1;
+    padding: 7px 0;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 700;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.ar-tp-new-confirm {
+    background: var(--cor-principal);
+    color: var(--cor-texto-claro);
+}
+.ar-tp-new-confirm:hover { opacity: 0.88; }
+
+.ar-tp-new-cancel {
+    background: var(--cor-tinte-medio);
+    color: var(--cor-texto-principal);
+}
+.ar-tp-new-cancel:hover { opacity: 0.8; }
+
 /* ══════════════════════════════════════════════════
    Institution split amounts
 ══════════════════════════════════════════════════ */
