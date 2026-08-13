@@ -2,6 +2,25 @@
     const API = "https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net";
     const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
     const userId = usuarioLogado?.id;
+    const GENEROS_USUARIO = [
+        "Homem cis",
+        "Homem trans",
+        "Mulher cis",
+        "Mulher trans",
+        "Não Binário",
+        "Genderqueer",
+        "Agênero",
+        "Prefiro não informar",
+        "Outro"
+    ];
+    const PRONOMES_USUARIO = [
+        "Ela / Dela",
+        "Ele / Dele",
+        "Elu / Delu",
+        "Usar apenas meu nome",
+        "Prefiro não informar",
+        "Personalizado"
+    ];
 
     // ── helpers ──────────────────────────────────────────────────
     function habilitarFecharAlertaAoClicarFora() {
@@ -71,6 +90,34 @@
             return window.MainAPI.formatarLocalDateTime(valor, "—");
         }
         return "—";
+    }
+
+    function obterPronomeExibicao(usuario) {
+        if (!usuario) return "—";
+        if (usuario.pronome === "Personalizado") {
+            return usuario.pronomePersonalizado || "Personalizado";
+        }
+        return usuario.pronome || usuario.pronomePersonalizado || "—";
+    }
+
+    function renderizarOpcoesSelect(opcoes, placeholder) {
+        return [`<option value="">${placeholder}</option>`]
+            .concat(opcoes.map(opcao => `<option value="${opcao}">${opcao}</option>`))
+            .join("");
+    }
+
+    function atualizarCampoPronomePersonalizado() {
+        const select = document.getElementById("edPronome");
+        const wrapper = document.getElementById("edPronomePersonalizadoWrap");
+        const input = document.getElementById("edPronomePersonalizado");
+        if (!select || !wrapper || !input) return;
+
+        const personalizado = select.value === "Personalizado";
+        wrapper.style.display = personalizado ? "block" : "none";
+        input.required = personalizado;
+        if (!personalizado) {
+            input.value = "";
+        }
     }
 
     function arquivoParaDataUrl(file) {
@@ -217,7 +264,7 @@
             window.location.href = "login.html";
             return;
         }
-        // Busca dados frescos da API para garantir sobrenome, sexo, dataNascimento e email
+        // Busca dados frescos da API para garantir sobrenome, genero, pronome, dataNascimento e email
         try {
             const usuarioAtualizado = await window.MainAPI.obterUsuario(userId);
             const merged = { ...usuarioLogado, ...usuarioAtualizado };
@@ -245,8 +292,10 @@
     function popularHero(u) {
         const nomeEl = document.getElementById("pfNome");
         if (nomeEl) nomeEl.textContent = `${u.nome} ${u.sobrenome}`;
-        const sexoEl = document.getElementById("pfSexo");
-        if (sexoEl) sexoEl.textContent = u.sexo || "—";
+        const generoEl = document.getElementById("pfGenero");
+        if (generoEl) generoEl.textContent = u.genero || u.sexo || "—";
+        const pronomeEl = document.getElementById("pfPronome");
+        if (pronomeEl) pronomeEl.textContent = obterPronomeExibicao(u);
         const nascEl = document.getElementById("pfNascimento");
         if (nascEl) nascEl.textContent = formatarData(u.dataNascimento);
         const emailEl = document.getElementById("pfEmail");
@@ -280,14 +329,21 @@
                         style="height:48px;border:2px solid var(--cor-principal);border-radius:8px;padding:0 14px;font-size:16px;background:var(--cor-fundo-campo);color:var(--cor-texto-principal);">
                     <input id="edNascimento" type="date"
                         style="height:48px;border:2px solid var(--cor-principal);border-radius:8px;padding:0 14px;font-size:16px;background:var(--cor-fundo-campo);color:var(--cor-texto-principal);">
-                    <select id="edSexo" style="height:48px;border:2px solid var(--cor-principal);border-radius:8px;padding:0 14px;font-size:16px;appearance:none;background:var(--cor-fundo-campo);color:var(--cor-texto-principal);">
-                        <option value="">Sexo</option>
-                        <option value="Masculino">Masculino</option>
-                        <option value="Feminino">Feminino</option>
-                        <option value="PrefiroNãoIdentificar">Prefiro não identificar</option>
+                    <select id="edGenero" style="height:48px;border:2px solid var(--cor-principal);border-radius:8px;padding:0 14px;font-size:16px;appearance:none;background:var(--cor-fundo-campo);color:var(--cor-texto-principal);">
+                        ${renderizarOpcoesSelect(GENEROS_USUARIO, "Gênero")}
                     </select>
+                    <select id="edPronome" style="height:48px;border:2px solid var(--cor-principal);border-radius:8px;padding:0 14px;font-size:16px;appearance:none;background:var(--cor-fundo-campo);color:var(--cor-texto-principal);">
+                        ${renderizarOpcoesSelect(PRONOMES_USUARIO, "Pronomes")}
+                    </select>
+                    <div id="edPronomePersonalizadoWrap" style="display:none;">
+                        <input id="edPronomePersonalizado" type="text" maxlength="50" placeholder="Pronome personalizado"
+                            style="width:100%;height:48px;border:2px solid var(--cor-principal);border-radius:8px;padding:0 14px;font-size:16px;background:var(--cor-fundo-campo);color:var(--cor-texto-principal);">
+                    </div>
+                    <div style="font-size:0.9rem;color:var(--cor-texto-secundario);margin-top:-6px;">
+                        O pronome sera usado para personalizar sua experiencia.
+                    </div>
                     <div style="display:flex;gap:12px;margin-top:4px;">
-                        <button onclick="salvarEdicaoPerfil()"
+                        <button id="btnSalvarEdicaoPerfil" onclick="salvarEdicaoPerfil()"
                             style="flex:1;height:48px;background:var(--cor-principal);color:var(--cor-texto-claro);border:none;border-radius:8px;font-size:16px;cursor:pointer;">
                             Salvar
                         </button>
@@ -299,59 +355,76 @@
                 </div>
             `;
             document.body.appendChild(modal);
-        }
+           document.getElementById("edPronome").addEventListener("change", atualizarCampoPronomePersonalizado);
+       }
 
-        // Preenche os campos com os dados atuais sempre que o modal abre
-        document.getElementById("edNome").value = u.nome || "";
-        document.getElementById("edSobrenome").value = u.sobrenome || "";
-        document.getElementById("edEmail").value = u.email || "";
-        document.getElementById("edNascimento").value = u.dataNascimento || "";
-        document.getElementById("edSexo").value = u.sexo || "";
+       // Preenche os campos com os dados atuais sempre que o modal abre
+       document.getElementById("edNome").value = u.nome || "";
+       document.getElementById("edSobrenome").value = u.sobrenome || "";
+       document.getElementById("edEmail").value = u.email || "";
+       document.getElementById("edNascimento").value = u.dataNascimento || "";
+       document.getElementById("edGenero").value = u.genero || u.sexo || "";
+       document.getElementById("edPronome").value = u.pronome || "";
+       document.getElementById("edPronomePersonalizado").value = u.pronomePersonalizado || "";
+       atualizarCampoPronomePersonalizado();
 
-        modal.style.display = "flex";
+       modal.style.display = "flex";
     };
 
     window.salvarEdicaoPerfil = async function () {
-        const emailVal = document.getElementById("edEmail").value.trim();
-        const payload = {
-            nome: document.getElementById("edNome").value.trim(),
-            sobrenome: document.getElementById("edSobrenome").value.trim(),
-            dataNascimento: document.getElementById("edNascimento").value || undefined,
-            sexo: document.getElementById("edSexo").value || undefined
-        };
-        if (emailVal) payload.email = emailVal;
+       const emailVal = document.getElementById("edEmail").value.trim();
+       const pronomeVal = document.getElementById("edPronome").value || undefined;
+       const pronomePersonalizado = document.getElementById("edPronomePersonalizado").value.trim();
+       const payload = {
+           nome: document.getElementById("edNome").value.trim(),
+           sobrenome: document.getElementById("edSobrenome").value.trim(),
+           dataNascimento: document.getElementById("edNascimento").value || undefined,
+           genero: document.getElementById("edGenero").value || undefined,
+           pronome: pronomeVal
+       };
+       if (emailVal) payload.email = emailVal;
 
-        if (!payload.nome || !payload.sobrenome || !payload.email) {
-            mostrarAlerta("Preencha nome, sobrenome e email.");
-            return;
-        }
+       if (pronomeVal === "Personalizado") {
+           if (!pronomePersonalizado) {
+               mostrarAlerta("Informe o pronome personalizado.");
+               return;
+           }
+           payload.pronomePersonalizado = pronomePersonalizado;
+       } else if (pronomeVal) {
+           payload.pronomePersonalizado = "";
+       }
 
-        try {
-            const res = await putJson(`${API}/usuarios/${userId}`, payload);
-            if (!res.ok) { mostrarAlerta("Erro ao salvar perfil."); return; }
-            const atualizado = await res.json();
-            // Atualiza localStorage
-            const novoUsuario = { ...usuarioLogado, ...atualizado };
-            localStorage.setItem("usuarioLogado", JSON.stringify(novoUsuario));
-            // Atualiza lista de perfis
-            try {
-                const perfis = JSON.parse(localStorage.getItem("perfis") || "[]");
-                const idx = perfis.findIndex(p => p.id === userId);
-                const entrada = { id: novoUsuario.id, nome: novoUsuario.nome, sobrenome: novoUsuario.sobrenome, imagem: novoUsuario.imagem || null };
-                if (idx !== -1) { perfis[idx] = Object.assign({}, perfis[idx], entrada); }
-                else { perfis.push(entrada); }
-                const perfisJson = JSON.stringify(perfis);
-                localStorage.setItem("perfis", perfisJson);
-                if (window.desktopBridge) {
-                    try { window.desktopBridge.savePerfis(perfisJson); } catch (_) {}
-                }
-            } catch (_) {}
-            popularHero(novoUsuario);
-            document.getElementById("modalEdicao").style.display = "none";
-        } catch (e) {
-            mostrarAlerta("Erro ao salvar perfil.");
-            console.error(e);
-        }
+       if (!payload.nome || !payload.sobrenome || !payload.email) {
+           mostrarAlerta("Preencha nome, sobrenome e email.");
+           return;
+       }
+
+       try {
+           const res = await putJson(`${API}/usuarios/${userId}`, payload);
+           if (!res.ok) { mostrarAlerta("Erro ao salvar perfil."); return; }
+           const atualizado = await res.json();
+           // Atualiza localStorage
+           const novoUsuario = { ...usuarioLogado, ...atualizado };
+           localStorage.setItem("usuarioLogado", JSON.stringify(novoUsuario));
+           // Atualiza lista de perfis
+           try {
+               const perfis = JSON.parse(localStorage.getItem("perfis") || "[]");
+               const idx = perfis.findIndex(p => p.id === userId);
+               const entrada = { id: novoUsuario.id, nome: novoUsuario.nome, sobrenome: novoUsuario.sobrenome, imagem: novoUsuario.imagem || null };
+               if (idx !== -1) { perfis[idx] = Object.assign({}, perfis[idx], entrada); }
+               else { perfis.push(entrada); }
+               const perfisJson = JSON.stringify(perfis);
+               localStorage.setItem("perfis", perfisJson);
+               if (window.desktopBridge) {
+                   try { window.desktopBridge.savePerfis(perfisJson); } catch (_) {}
+               }
+           } catch (_) {}
+           popularHero(novoUsuario);
+           document.getElementById("modalEdicao").style.display = "none";
+       } catch (e) {
+           mostrarAlerta("Erro ao salvar perfil.");
+           console.error(e);
+       }
     };
 
     // ── CONFIGURAÇÕES (resumo) ────────────────────────────────────
