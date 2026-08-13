@@ -1,11 +1,110 @@
 (function () {
     const LOCAL_API = "https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net";
+    const AUTH_TOKEN_KEY = "authToken";
+
+    function obterUsuarioLogado() {
+        try {
+            return JSON.parse(localStorage.getItem("usuarioLogado") || "null");
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function obterTokenAutenticacao() {
+        const usuario = obterUsuarioLogado();
+        return localStorage.getItem(AUTH_TOKEN_KEY) || usuario?.token || null;
+    }
+
+    function salvarSessao(usuario, token) {
+        if (!usuario || !usuario.id) return null;
+
+        const sessao = token
+            ? Object.assign({}, usuario, { token })
+            : Object.assign({}, usuario);
+
+        localStorage.setItem("usuarioLogado", JSON.stringify(sessao));
+
+        if (sessao.token) {
+            localStorage.setItem(AUTH_TOKEN_KEY, sessao.token);
+        } else {
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+        }
+
+        return sessao;
+    }
+
+    function limparSessao() {
+        localStorage.removeItem("usuarioLogado");
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+
+    function paginaPublica() {
+        const path = (window.location.pathname || "").replace(/\\/g, "/");
+        const pagina = path.substring(path.lastIndexOf("/") + 1).toLowerCase();
+        return !pagina || pagina === "index.html" || pagina === "login.html" || pagina === "cadastrar.html";
+    }
+
+    function garantirAutenticacaoDaPagina() {
+        if (paginaPublica()) return;
+
+        const usuario = obterUsuarioLogado();
+        const token = obterTokenAutenticacao();
+        if (usuario?.id && token) return;
+
+        limparSessao();
+        window.location.href = "login.html";
+    }
 
     function buildUrl(path) {
         if (/^https?:\/\//i.test(path)) {
             return path;
         }
         return `${LOCAL_API}${path}`;
+    }
+
+    function ehRequisicaoDaApi(url) {
+        if (!url) return false;
+
+        try {
+            const alvo = new URL(url, LOCAL_API);
+            const api = new URL(LOCAL_API);
+            return alvo.origin === api.origin;
+        } catch (_) {
+            return !/^https?:\/\//i.test(String(url));
+        }
+    }
+
+    function criarHeadersComAuth(headersOriginais) {
+        const headers = new Headers(headersOriginais || {});
+        const token = obterTokenAutenticacao();
+
+        if (token && !headers.has("Authorization")) {
+            headers.set("Authorization", "Bearer " + token);
+        }
+
+        return headers;
+    }
+
+    const nativeFetch = window.fetch ? window.fetch.bind(window) : null;
+    if (nativeFetch) {
+        window.fetch = function (input, init) {
+            const url = typeof input === "string"
+                ? input
+                : (input && input.url ? input.url : "");
+
+            if (!ehRequisicaoDaApi(url)) {
+                return nativeFetch(input, init);
+            }
+
+            if (typeof Request !== "undefined" && input instanceof Request) {
+                const headers = criarHeadersComAuth(init && init.headers ? init.headers : input.headers);
+                return nativeFetch(new Request(input, Object.assign({}, init || {}, { headers })));
+            }
+
+            const options = Object.assign({}, init || {});
+            options.headers = criarHeadersComAuth(options.headers);
+            return nativeFetch(buildUrl(url), options);
+        };
     }
 
     function request(path, options) {
@@ -233,6 +332,11 @@
     window.MainAPI = {
         request,
         get,
+        LOCAL_API,
+        obterUsuarioLogado,
+        obterTokenAutenticacao,
+        salvarSessao,
+        limparSessao,
         formatarLocalDateTime,
         aplicarMascaraData,
         dataParaISO,
@@ -445,4 +549,6 @@
             return request(`/registros/${eventoId}`, { method: "DELETE" });
         }
     };
+
+    garantirAutenticacaoDaPagina();
 })();

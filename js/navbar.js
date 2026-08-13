@@ -129,7 +129,12 @@ function sidebarFunction() {
             console.error('Erro ao remover perfil da lista no logout:', errPerfis);
         }
 
-        localStorage.removeItem('usuarioLogado');
+        if (window.MainAPI && window.MainAPI.limparSessao) {
+            window.MainAPI.limparSessao();
+        } else {
+            localStorage.removeItem('usuarioLogado');
+            localStorage.removeItem('authToken');
+        }
         setTimeout(function () {
             window.location.href = 'index.html';
         }, 150);

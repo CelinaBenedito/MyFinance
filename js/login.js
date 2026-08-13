@@ -83,10 +83,26 @@ function login(email, senha){
     }).then((response) => {
         console.warn("Resposta da tentativa de login:", response);
         if (response.ok) {
-            response.json().then(async usuario => {
+            response.json().then(async payload => {
+                const usuario = payload?.usuario || payload;
+                const token = payload?.token || null;
+                if (!usuario || !usuario.id) {
+                    alerta(`Erro ao processar resposta do servidor. <button onclick='div_alerta.style.display="none"'>OK</button>`);
+                    return;
+                }
+
+                const usuarioAutenticado = window.MainAPI?.salvarSessao
+                    ? window.MainAPI.salvarSessao(usuario, token)
+                    : Object.assign({}, usuario, token ? { token: token } : {});
                 const perfis = JSON.parse(localStorage.getItem("perfis") || "[]");
-                const idx = perfis.findIndex(p => p.id === usuario.id);
-                const perfilAtualizado = { id: usuario.id, nome: usuario.nome, sobrenome: usuario.sobrenome, imagem: usuario.imagem || null };
+                const idx = perfis.findIndex(p => p.id === usuarioAutenticado.id);
+                const perfilAtualizado = {
+                    id: usuarioAutenticado.id,
+                    nome: usuarioAutenticado.nome,
+                    sobrenome: usuarioAutenticado.sobrenome,
+                    imagem: usuarioAutenticado.imagem || null,
+                    token: usuarioAutenticado.token || null
+                };
                 if (idx === -1) {
                     perfis.push(perfilAtualizado);
                 } else {
@@ -94,7 +110,6 @@ function login(email, senha){
                 }
                 const perfisJson = JSON.stringify(perfis);
                 localStorage.setItem("perfis", perfisJson);
-                localStorage.setItem("usuarioLogado", JSON.stringify(usuario));
 
                 // Persiste em disco via desktopBridge (Java lê/escreve o arquivo diretamente)
                 // — mais confiável que localStorage em callbacks async do JavaFX WebView

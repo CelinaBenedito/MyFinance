@@ -79,8 +79,17 @@
                 card.innerHTML = '<div class="usuario">' + avatarHtml + '</div><span>' + (perfil.nome || "") + '</span>';
                 card.style.cursor = "pointer";
                 card.addEventListener("click", function () {
-                    localStorage.setItem("usuarioLogado", JSON.stringify(perfil));
-                    window.location.href = "dashboard.html";
+                    if (window.MainAPI && window.MainAPI.salvarSessao) {
+                        window.MainAPI.salvarSessao(perfil, perfil.token || null);
+                    } else {
+                        localStorage.setItem("usuarioLogado", JSON.stringify(perfil));
+                        if (perfil.token) {
+                            localStorage.setItem("authToken", perfil.token);
+                        } else {
+                            localStorage.removeItem("authToken");
+                        }
+                    }
+                    window.location.href = perfil.token ? "dashboard.html" : "login.html";
                 });
                 // insertBefore precisa de filho DIRETO como refer�ncia
                 _lista.insertBefore(card, _btnAdd);

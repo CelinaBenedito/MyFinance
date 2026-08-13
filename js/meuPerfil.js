@@ -725,7 +725,12 @@
                     console.error("Erro ao remover perfil da lista:", errPerfis);
                 }
 
-                localStorage.removeItem("usuarioLogado");
+                if (window.MainAPI && window.MainAPI.limparSessao) {
+                    window.MainAPI.limparSessao();
+                } else {
+                    localStorage.removeItem("usuarioLogado");
+                    localStorage.removeItem("authToken");
+                }
                 setTimeout(() => {
                     window.location.href = "index.html";
                 }, 1500);
