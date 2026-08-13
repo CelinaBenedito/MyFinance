@@ -1,5 +1,5 @@
 (function () {
-    const LOCAL_API = "http://localhost:8080";
+    const LOCAL_API = "https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net";
 
     function buildUrl(path) {
         if (/^https?:\/\//i.test(path)) {

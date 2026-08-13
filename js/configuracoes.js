@@ -1,5 +1,5 @@
 (function () {
-    const API = "http://localhost:8080";
+    const API = "https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net";
     const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado") || "null");
     const userId = usuarioLogado?.id;
 

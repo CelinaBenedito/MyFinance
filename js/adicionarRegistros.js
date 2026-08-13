@@ -820,7 +820,7 @@ async function atualizarSaldoDisplay(instituicaoUsuarioId) {
     if (!el) return;
     if (!instituicaoUsuarioId || instituicaoUsuarioId === '#') { el.style.display = 'none'; return; }
     try {
-        const res = await fetch(`http://localhost:8080/instituicoes/saldo/${Number(instituicaoUsuarioId)}`);
+        const res = await fetch(`https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net/instituicoes/saldo/${Number(instituicaoUsuarioId)}`);
         if (!res.ok) { el.style.display = 'none'; return; }
         const saldo = await res.json();
         const valor = Number(saldo);
@@ -920,7 +920,7 @@ async function registrar() {
     // Usa saldo-debito para não considerar o limite de crédito em transações de débito
     if ((tipo === 'Gasto' || tipo === 'Transferencia') && selectedInst.length === 1 && movimento !== 'Credito') {
         try {
-            const resSaldo = await fetch(`http://localhost:8080/instituicoes/saldo-debito/${Number(selectedInst[0].id)}`);
+            const resSaldo = await fetch(`https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net/instituicoes/saldo-debito/${Number(selectedInst[0].id)}`);
             if (resSaldo.ok) {
                 const saldo = await resSaldo.json();
                 if (Number(saldo) < valor)
@@ -1381,5 +1381,4 @@ titulos.forEach(item => {
         item.classList.add("ativo");
     });
 });
-
 

@@ -1,5 +1,5 @@
 // ── DASHBOARD — integração com os novos endpoints /dashboard/* ────────────────
-const API_BASE = 'http://localhost:8080';
+const API_BASE = 'https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net';
 const CURRENCY = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 // Guard: redireciona para seleção de perfil se não houver usuário logado

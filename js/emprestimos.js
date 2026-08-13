@@ -2,7 +2,7 @@
 // EMPRÉSTIMOS - JavaScript
 // ============================================================================
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = 'https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net';
 let usuarioLogado = null;
 let emprestimos = [];
 let emprestimoEmEdicao = null;

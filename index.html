@@ -56,7 +56,7 @@
         // Refer�ncia CORRETA: o <a href="cadastrar.html"> � filho DIRETO de _lista.
         // Usar .addUsuario causava NotFoundError silencioso porque ele � neto (est� dentro do <a>).
         var _btnAdd = _lista.querySelector("a[href='cadastrar.html']") || _lista.lastElementChild;
-        var _API = "http://localhost:8080";
+        var _API = "https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net";
         var _jaRenderizou = false;
 
         function _resolverImg(perfil) {

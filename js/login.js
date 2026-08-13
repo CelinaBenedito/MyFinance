@@ -103,7 +103,7 @@ function login(email, senha){
                 }
 
                 // Também persiste via HTTP (backup)
-                fetch("http://localhost:8080/perfis", {
+                fetch("https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net/perfis", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ perfis: perfisJson })
