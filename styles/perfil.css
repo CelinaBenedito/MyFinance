@@ -382,3 +382,31 @@
     padding: 15px;
     margin: 0 10px;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVO — Perfil
+───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .pf-campo input {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .pf-xp-wrap {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .pf-nome {
+        font-size: 1.6rem;
+    }
+
+    .pf-avatar {
+        width: 150px;
+        height: 150px;
+    }
+
+    .pf-avatar i {
+        font-size: 3.5rem;
+    }
+}

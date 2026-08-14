@@ -10,24 +10,92 @@ const caixinhaN = document.getElementById("caixinhas"); // pode ser null em pág
 
 let ativo = false;
 
-navbar.style.width = "70px";
-main.style.marginLeft = "70px";
+const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
 
+function _applyInitialState() {
+    if (isMobile()) {
+        navbar.style.width = "0";
+        navbar.style.overflow = "hidden";
+        navbar.style.padding = "0";
+        main.style.marginLeft = "0";
+        main.style.paddingTop = "68px";
+    } else {
+        navbar.style.width = "70px";
+        navbar.style.overflow = "";
+        navbar.style.padding = "20px";
+        main.style.marginLeft = "70px";
+        main.style.paddingTop = "";
+    }
+}
+
+_applyInitialState();
+
+function _closeSidebarMobile() {
+    ativo = false;
+    navbar.classList.remove('sidebar--aberta');
+    navbar.style.width = "0";
+    navbar.style.overflow = "hidden";
+    navbar.style.padding = "0";
+    var bd = document.getElementById('sidebar-backdrop');
+    if (bd) bd.style.display = 'none';
+}
 
 function sidebarFunction() {
-    if (!ativo) {
-        ativo = true;
-        navbar.classList.add('sidebar--aberta');
-        navbar.style.width = "300px";
-        main.style.marginLeft = "300px";
+    if (isMobile()) {
+        if (!ativo) {
+            ativo = true;
+            navbar.classList.add('sidebar--aberta');
+            navbar.style.width = "270px";
+            navbar.style.overflow = "";
+            navbar.style.padding = "20px";
+            var bd = document.getElementById('sidebar-backdrop');
+            if (bd) bd.style.display = 'block';
+        } else {
+            _closeSidebarMobile();
+        }
     } else {
-        ativo = false;
-        navbar.classList.remove('sidebar--aberta');
-        navbar.style.width = "70px";
-        main.style.marginLeft = "70px";
+        if (!ativo) {
+            ativo = true;
+            navbar.classList.add('sidebar--aberta');
+            navbar.style.width = "300px";
+            main.style.marginLeft = "300px";
+        } else {
+            ativo = false;
+            navbar.classList.remove('sidebar--aberta');
+            navbar.style.width = "70px";
+            main.style.marginLeft = "70px";
+        }
     }
-
 }
+
+// Inject mobile hamburger button and backdrop
+(function () {
+    var hamBtn = document.createElement('button');
+    hamBtn.id = 'mobile-ham-btn';
+    hamBtn.setAttribute('aria-label', 'Menu');
+    hamBtn.innerHTML = "<i class='bx bx-menu'></i>";
+    hamBtn.addEventListener('click', sidebarFunction);
+    document.body.appendChild(hamBtn);
+
+    var backdrop = document.createElement('div');
+    backdrop.id = 'sidebar-backdrop';
+    backdrop.addEventListener('click', function () { if (ativo) sidebarFunction(); });
+    document.body.appendChild(backdrop);
+})();
+
+// Handle window resize (e.g. phone rotation)
+var _lastMobile = isMobile();
+window.addEventListener('resize', function () {
+    var nowMobile = isMobile();
+    if (nowMobile === _lastMobile) return;
+    _lastMobile = nowMobile;
+    ativo = false;
+    navbar.classList.remove('sidebar--aberta');
+    var bd = document.getElementById('sidebar-backdrop');
+    if (bd) bd.style.display = 'none';
+    main.style.paddingTop = "";
+    _applyInitialState();
+});
 
 /*---------------- Modal de confirmação de Logout ----------------*/
 (function () {
@@ -442,8 +510,18 @@ window.addEventListener("DOMContentLoaded", function () {
 
         var userWidget = document.getElementById("userWidget");
         if (userWidget) {
-            // Injeta inline antes do user widget
-            userWidget.insertAdjacentHTML("beforebegin", fabHtml);
+            var parentEl = userWidget.parentElement;
+            if (parentEl && parentEl.classList.contains('top-actions')) {
+                // Estrutura correta: injeta antes do user-widget dentro de top-actions
+                userWidget.insertAdjacentHTML("beforebegin", fabHtml);
+            } else {
+                // Estrutura sem wrapper: cria top-actions agrupando fab + user-widget
+                var wrapper = document.createElement('div');
+                wrapper.className = 'top-actions';
+                parentEl.insertBefore(wrapper, userWidget);
+                wrapper.insertAdjacentHTML("afterbegin", fabHtml);
+                wrapper.appendChild(userWidget);
+            }
         } else {
             // Fallback fixo para páginas sem user widget
             document.body.insertAdjacentHTML("beforeend", fabHtml);
@@ -1029,3 +1107,66 @@ window.addEventListener("DOMContentLoaded", function () {
     // Verificações subsequentes a cada 30 minutos
     setInterval(verificarAtualizacao, CHECK_INTERVAL_MS);
 })();
+
+/*---------------- Skeleton Shimmer — carregamento estilo Instagram ----------------*/
+(function () {
+    // Seletores dos cards que recebem o efeito enquanto os dados carregam
+    var SK_SEL = [
+        '.KPI',
+        '.campo-grafico',
+        '.kpi-saude-card',
+        '.historia-financeira-card',
+        '.pf-card'
+    ].join(',');
+
+    var _pending     = 0;
+    var _removeTimer = null;
+    var _safetyTimer = null;
+
+    function _apply() {
+        var els = document.querySelectorAll(SK_SEL);
+        for (var i = 0; i < els.length; i++) {
+            els[i].classList.add('mf-sk');
+        }
+        // Segurança: remove skeleton após 5s no máximo, independente dos fetches
+        clearTimeout(_safetyTimer);
+        _safetyTimer = setTimeout(_remove, 5000);
+    }
+
+    function _remove() {
+        clearTimeout(_removeTimer);
+        clearTimeout(_safetyTimer);
+        var els = document.querySelectorAll('.mf-sk');
+        for (var i = 0; i < els.length; i++) {
+            els[i].classList.remove('mf-sk');
+        }
+    }
+
+    function _scheduleRemove() {
+        if (_pending > 0) return;
+        clearTimeout(_removeTimer);
+        // pequeno delay para o JS da página processar a resposta e renderizar o DOM
+        _removeTimer = setTimeout(_remove, 450);
+    }
+
+    // Intercepta window.fetch para rastrear requisições pendentes
+    var _origFetch = window.fetch;
+    window.fetch = function () {
+        _pending++;
+        clearTimeout(_removeTimer);
+        var p = _origFetch.apply(this, arguments);
+        p.then(
+            function (r) { _pending--; _scheduleRemove(); return r; },
+            function (e) { _pending--; _scheduleRemove(); throw e; }
+        );
+        return p;
+    };
+
+    // Aplica skeleton assim que o DOM estiver pronto
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _apply);
+    } else {
+        _apply();
+    }
+})();
+

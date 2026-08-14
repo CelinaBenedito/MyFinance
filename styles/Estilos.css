@@ -120,6 +120,8 @@ h1 {
     padding: 20px;
     flex-grow: 1;
     width: auto;
+    min-width: 0;
+    overflow-x: hidden;
 }
 
 
@@ -158,6 +160,19 @@ h1 {
 
 .side-bar a i {
     margin-right: 10px;
+}
+
+.side-bar a.nav-ativo {
+    opacity: 1;
+    font-weight: 900;
+    background-color: rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    padding: 4px 8px;
+    margin: -4px -8px;
+}
+
+.side-bar a.nav-ativo i {
+    transform: scale(1.15);
 }
 
 .containerKPIS {
@@ -252,8 +267,10 @@ h1 {
     grid-template-columns: 45% 45%;
     gap: 5%;
     width: 100%;
+    min-width: 0;
     justify-content: center;
-    align-items: center;
+    align-items: start;
+    overflow: hidden;
 }
 
 #graficoDonut {
@@ -500,7 +517,7 @@ h1 {
 
 .cardRegistro {
     display: grid;
-    grid-template-columns: 1fr 100px 1fr 1fr 1fr auto;
+    grid-template-columns: 80px 110px 1fr 1fr 1fr auto;
     gap: 16px;
     align-items: center;
 
@@ -511,15 +528,23 @@ h1 {
     box-shadow: 0 6px 16px var(--sombra-card);
 }
 
+.reg-col-data {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.reg-col-valor {
+    text-align: center;
+}
+
 /* Botões de ação do card de registro */
 .registroAcoes {
     display: flex;
     gap: 6px;
     align-items: center;
-}
-
-.registroInfo {
-    text-align: center;
 }
 
 /* Badge de tipo (Gasto / Recebimento / Transferência) */
@@ -1103,7 +1128,7 @@ footer a {
 /* Cabeçalho da tabela de registros — mesmas colunas do .cardRegistro */
 .registros-cabecalho {
     display: grid;
-    grid-template-columns: 1fr 100px 1fr 1fr 1fr auto;
+    grid-template-columns: 80px 110px 1fr 1fr 1fr auto;
     gap: 16px;
     align-items: center;
     padding: 10px 18px;
@@ -1878,8 +1903,8 @@ footer a {
 /* ── Sankey / Fluxo ── */
 .grafico-fluxo-container {
     width: 100%;
-    min-height: 400px;
-    overflow: hidden;
+    min-height: 550px;
+    overflow: visible;
 }
 
 /* ── Responsive ── */
@@ -1887,31 +1912,19 @@ footer a {
     .containerKPIS {
         grid-template-columns: repeat(2, 1fr);
     }
-    .containerGraficos {
-        grid-template-columns: 1fr !important;
-    }
     .container-kpi-secundarios {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
     .top-actions {
         width: auto;
         justify-content: flex-end;
     }
-    .page-title-row {
-        flex-direction: column;
-    }
     .welcome-actions {
         width: 100%;
-    }
-    .containerGraficos .campo-grafico[style*="span 2"] {
-        grid-column: span 1 !important;
     }
 }
 
 @media (max-width: 520px) {
-    .containerKPIS {
-        grid-template-columns: 1fr;
-    }
     .kpi-valor-grande {
         font-size: 1.5rem;
     }
@@ -1921,4 +1934,394 @@ footer a {
 .side-bar.sidebar--aberta a span {
     opacity: 1;
     max-width: 220px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BOTÃO HAMBURGER MOBILE (injetado via navbar.js)
+───────────────────────────────────────────────────────────── */
+#mobile-ham-btn {
+    display: none;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 500;
+    background: var(--cor-principal);
+    color: var(--cor-texto-claro);
+    border: none;
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    font-size: 1.4rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px var(--sombra-flutuante);
+    transition: background 0.2s;
+    padding: 0;
+    margin: 0;
+}
+
+#mobile-ham-btn:hover {
+    background: var(--cor-hover);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BACKDROP DA SIDEBAR MOBILE
+───────────────────────────────────────────────────────────── */
+#sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 50;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVO — Mobile (≤ 768px)
+───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    #mobile-ham-btn {
+        display: flex;
+    }
+
+    /* Sidebar overlays content on mobile */
+    .side-bar {
+        z-index: 100;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+        margin-bottom: 16px;
+    }
+
+    .page-title-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Foto de perfil + botões acima do título no mobile */
+    .top-actions {
+        order: -1;
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .welcome-actions {
+        order: 0;
+        width: 100%;
+    }
+
+    /* KPIs */
+    .containerKPIS {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .kpi-valor-grande {
+        font-size: 1.3rem !important;
+    }
+
+    .container-kpi-secundarios {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    /* Filtros */
+    .filtros {
+        flex-wrap: wrap;
+        gap: 0;
+    }
+
+    .filtros .campo {
+        flex: 1;
+        min-width: 130px;
+    }
+
+    .filtros select {
+        width: 100%;
+    }
+
+    /* Dashboard atalhos */
+    .dash-atalhos {
+        gap: 5px;
+    }
+
+    .dash-atalho-btn {
+        font-size: 0.72rem;
+        padding: 5px 9px;
+    }
+
+    /* Gráficos — 1 coluna compacta no mobile */
+    .containerGraficos {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        overflow: hidden;
+    }
+
+    .containerGraficos .campo-grafico[style*="span 2"] {
+        grid-column: span 1 !important;
+    }
+
+    .campo-grafico {
+        padding: 10px 10px 8px;
+        gap: 6px;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .titulo-grafico {
+        font-size: 0.8rem;
+    }
+
+    .campo-grafico canvas {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 180px !important;
+    }
+
+    /* Formulários de cadastro/login */
+    .containerFormulario {
+        width: 100%;
+        margin: 8px 0;
+    }
+
+    .card-formulario {
+        width: 95%;
+        grid-template-columns: 1fr;
+        padding: 20px 16px;
+    }
+
+    .campo.full {
+        grid-column: span 1;
+    }
+
+    .campo.full button {
+        width: 100%;
+    }
+
+    /* Seleção de usuários */
+    .containerUsuarios {
+        width: 95%;
+    }
+
+    .usuarios {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* Tabela de registros */
+    .registros-cabecalho {
+        display: none;
+    }
+
+    .cardRegistro {
+        display: grid;
+        grid-template-columns: 62px 1fr auto;
+        grid-template-rows: auto auto auto auto;
+        grid-template-areas:
+            "data detalhes acoes"
+            "data valor    valor"
+            "insts insts   insts"
+            "cats  cats    cats";
+        gap: 4px 10px;
+        padding: 12px 14px;
+        position: static;
+        align-items: start;
+    }
+
+    .reg-col-data {
+        grid-area: data;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        text-align: center;
+        padding-top: 2px;
+    }
+
+    .dataRegistro {
+        font-size: 1.4rem;
+    }
+
+    .reg-col-detalhes { grid-area: detalhes; }
+    .reg-col-valor    { grid-area: valor; text-align: left; }
+    .reg-col-insts    { grid-area: insts; }
+    .reg-col-cats     { grid-area: cats; }
+
+    .registroAcoes {
+        grid-area: acoes;
+        position: static;
+        flex-direction: column;
+        gap: 2px;
+        align-items: center;
+    }
+
+    /* Paginação */
+    .reg-paginacao {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    /* Heat map — dias da semana */
+    .hm-box {
+        min-width: 30px;
+        height: 56px;
+    }
+
+    .hm-nome {
+        font-size: 0.65rem;
+    }
+
+    .hm-valor {
+        font-size: 0.6rem;
+    }
+
+    /* Modais genéricos */
+    .conteudoModal,
+    .conteudoAlerta,
+    .conteudoTipo {
+        width: 95%;
+        max-width: 400px;
+    }
+
+    /* Container registros */
+    .containerRegistros {
+        grid-template-columns: 1fr auto;
+    }
+
+    .containerRegistros .divimgGlaceonCostas {
+        display: none;
+    }
+
+    /* Botões de 3 colunas */
+    .botoes {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVO — Mobile pequeno (≤ 480px)
+───────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    /* KPIs — 2 colunas compactas */
+    .containerKPIS {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .container-kpi-secundarios {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .KPI {
+        padding: 11px 10px 9px;
+        gap: 4px;
+        border-radius: 14px;
+    }
+
+    .containerKPIS .KPI:first-child {
+        padding: 11px 10px 9px;
+    }
+
+    .kpi-valor-grande {
+        font-size: 1.0rem !important;
+        line-height: 1.1;
+    }
+
+    .containerKPIS .KPI:first-child .kpi-valor-grande {
+        font-size: 1.05rem !important;
+    }
+
+    .kpi-label {
+        font-size: 0.62rem;
+        letter-spacing: 0.02em;
+    }
+
+    .containerKPIS .KPI:first-child .kpi-label {
+        font-size: 0.72rem;
+    }
+
+    .kpi-icon-box {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+    }
+
+    .kpi-icon-box i {
+        font-size: 0.9rem;
+    }
+
+    .kpi-sub,
+    .kpi-badge-row {
+        display: none;
+    }
+
+    .usuarios {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .botoes {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVO — Tablet (769px – 1200px)
+───────────────────────────────────────────────────────────── */
+@media (max-width: 1200px) and (min-width: 769px) {
+    h1 {
+        font-size: 2rem;
+    }
+
+    .containerFormulario {
+        width: 70%;
+    }
+
+    .card-formulario {
+        width: 80%;
+    }
+
+    .containerUsuarios {
+        width: 70%;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SKELETON SHIMMER — efeito de carregamento (estilo Instagram)
+───────────────────────────────────────────────────────────── */
+@keyframes mf-shimmer {
+    0%   { transform: translateX(-150%); }
+    100% { transform: translateX(150%); }
+}
+
+.mf-sk {
+    position: relative !important;
+    overflow: hidden !important;
+    pointer-events: none;
+    user-select: none;
+    background: color-mix(in srgb, var(--cor-principal, #6366f1) 9%, var(--cor-fundo-card, #f4f4f8)) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    min-height: 52px;
+}
+
+.mf-sk > * {
+    visibility: hidden;
+}
+
+/* brilho que percorre o card da esquerda para a direita */
+.mf-sk::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-150%);
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--cor-principal, #6366f1) 26%, var(--cor-fundo-card, #fff)) 50%,
+        transparent 100%
+    );
+    animation: mf-shimmer 1.5s ease-in-out infinite;
+    z-index: 1;
 }

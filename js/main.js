@@ -36,6 +36,7 @@
     function limparSessao() {
         localStorage.removeItem("usuarioLogado");
         localStorage.removeItem(AUTH_TOKEN_KEY);
+        if (window.AppCache) window.AppCache.clearAll();
     }
 
     function paginaPublica() {
@@ -346,22 +347,60 @@
         obterValorMoeda,
         resetarMascaraMoeda,
         getTipos(userId) {
-            // Endpoint paginado — busca todas as páginas
-            return fetchTodasPaginas(`/categorias/usuario/${userId}`);
+            const C = window.AppCache;
+            if (C) {
+                const cached = C.get(C.keyCategoriasUser(userId));
+                if (cached) return Promise.resolve(cached);
+            }
+            return fetchTodasPaginas(`/categorias/usuario/${userId}`).then(data => {
+                if (C) C.set(C.keyCategoriasUser(userId), data, C.TTL.CATEGORIES_USER);
+                return data;
+            });
         },
         getInstituicoes(userId) {
+            const C = window.AppCache;
             if (userId) {
-                // Endpoint paginado — busca todas as páginas
-                return fetchTodasPaginas(`/instituicoes/usuarios/${userId}`);
+                if (C) {
+                    const cached = C.get(C.keyInstituicoesUser(userId));
+                    if (cached) return Promise.resolve(cached);
+                }
+                return fetchTodasPaginas(`/instituicoes/usuarios/${userId}`).then(data => {
+                    if (C) C.set(C.keyInstituicoesUser(userId), data, C.TTL.INSTITUTIONS_USER);
+                    return data;
+                });
             }
-            // Endpoint global também paginado
-            return fetchTodasPaginas("/instituicoes");
+            if (C) {
+                const cached = C.get(C.keyInstituicoesAll());
+                if (cached) return Promise.resolve(cached);
+            }
+            return fetchTodasPaginas("/instituicoes").then(data => {
+                if (C) C.set(C.keyInstituicoesAll(), data, C.TTL.INSTITUTIONS_ALL);
+                return data;
+            });
         },
         registrarGasto(payload) {
-            return postJson("/registros", payload);
+            return postJson("/registros", payload).then(res => {
+                if (res.ok && window.AppCache) {
+                    const uid = obterUsuarioLogado()?.id;
+                    if (uid) {
+                        window.AppCache.invalidarRegistros(uid);
+                        window.AppCache.invalidarDashboard(uid);
+                    }
+                }
+                return res;
+            });
         },
         registrarRecorrente(payload) {
-            return postJson("/registros/recorrente", payload);
+            return postJson("/registros/recorrente", payload).then(res => {
+                if (res.ok && window.AppCache) {
+                    const uid = obterUsuarioLogado()?.id;
+                    if (uid) {
+                        window.AppCache.invalidarRegistros(uid);
+                        window.AppCache.invalidarDashboard(uid);
+                    }
+                }
+                return res;
+            });
         },
         getCaixinhas(userId) {
             return request(`/caixinhas/ativas/usuarios/${userId}`, { method: "GET" })
@@ -383,30 +422,67 @@
                     return res.json();
                 });
         },
+        // ── AGENDA: todos os registros de um mês (sem paginação exposta) ──
+        buscarTodosRegistrosMes(userId, ano, mes) {
+            const C = window.AppCache;
+            if (C) {
+                const cached = C.get(C.keyAgendaMes(userId, ano, mes));
+                if (cached) return Promise.resolve(cached);
+            }
+            return fetchTodasPaginas(`/registros/mes/usuarios/${userId}?ano=${ano}&mes=${mes}`)
+                .then(data => {
+                    if (C) C.set(C.keyAgendaMes(userId, ano, mes), data, C.TTL.RECORDS_PAGE);
+                    return data;
+                });
+        },
         // ── PASSO 1: anos com registros ─────────────────────────────
         buscarAnosRegistros(userId) {
+            const C = window.AppCache;
+            if (C) {
+                const cached = C.get(C.keyRegAnos(userId));
+                if (cached) return Promise.resolve(cached);
+            }
             return request(`/registros/anos/usuarios/${userId}`, { method: "GET" })
                 .then(res => {
                     if (res.status === 204) return [];
                     return res.json();
+                }).then(data => {
+                    if (C) C.set(C.keyRegAnos(userId), data, C.TTL.RECORDS_NAV);
+                    return data;
                 });
         },
         // ── PASSO 2: meses (do ano) com registros ───────────────────
         buscarMesesRegistros(userId, ano) {
+            const C = window.AppCache;
+            if (C) {
+                const cached = C.get(C.keyRegMeses(userId, ano));
+                if (cached) return Promise.resolve(cached);
+            }
             return request(`/registros/meses/usuarios/${userId}?ano=${ano}`, { method: "GET" })
                 .then(res => {
                     if (res.status === 204) return [];
                     return res.json();
+                }).then(data => {
+                    if (C) C.set(C.keyRegMeses(userId, ano), data, C.TTL.RECORDS_NAV);
+                    return data;
                 });
         },
         // ── PASSO 3: registros do mês, paginados ────────────────────
         buscarRegistrosPorMes(userId, ano, mes, pagina = 0, tamanho = 20) {
+            const C = window.AppCache;
+            if (C) {
+                const cached = C.get(C.keyRegPagina(userId, ano, mes, pagina, tamanho));
+                if (cached) return Promise.resolve(cached);
+            }
             return request(`/registros/mes/usuarios/${userId}?ano=${ano}&mes=${mes}&pagina=${pagina}&tamanho=${tamanho}`, { method: "GET" })
                 .then(res => {
                     if (res.status === 204) {
                         return { content: [], totalElements: 0, totalPages: 0, number: 0, size: tamanho, first: true, last: true, empty: true };
                     }
                     return res.json();
+                }).then(data => {
+                    if (C) C.set(C.keyRegPagina(userId, ano, mes, pagina, tamanho), data, C.TTL.RECORDS_PAGE);
+                    return data;
                 });
         },
         filtrarRegistros(userId, filtros) {
@@ -434,22 +510,50 @@
                 });
         },
         adicionarTipo(payload, userId) {
-            return postJson(`/categorias/usuario/${userId}`, { titulo: payload.titulo });
+            return postJson(`/categorias/usuario/${userId}`, { titulo: payload.titulo }).then(res => {
+                if (res.ok && window.AppCache) window.AppCache.del(window.AppCache.keyCategoriasUser(userId));
+                return res;
+            });
         },
         getTodasInstituicoes() {
-            return fetchTodasPaginas("/instituicoes");
+            const C = window.AppCache;
+            if (C) {
+                const cached = C.get(C.keyInstituicoesAll());
+                if (cached) return Promise.resolve(cached);
+            }
+            return fetchTodasPaginas("/instituicoes").then(data => {
+                if (C) C.set(C.keyInstituicoesAll(), data, C.TTL.INSTITUTIONS_ALL);
+                return data;
+            });
         },
         getTodasCategorias() {
-            return fetchTodasPaginas("/categorias");
+            const C = window.AppCache;
+            if (C) {
+                const cached = C.get(C.keyCategoriasAll());
+                if (cached) return Promise.resolve(cached);
+            }
+            return fetchTodasPaginas("/categorias").then(data => {
+                if (C) C.set(C.keyCategoriasAll(), data, C.TTL.CATEGORIES_ALL);
+                return data;
+            });
         },
         criarInstituicao(nome) {
-            return postJson("/instituicoes", { nome });
+            return postJson("/instituicoes", { nome }).then(res => {
+                if (res.ok && window.AppCache) window.AppCache.del(window.AppCache.keyInstituicoesAll());
+                return res;
+            });
         },
         vincularInstituicaoUsuario(instituicaoId, userId) {
-            return request(`/instituicoes/${instituicaoId}/usuarios/${userId}`, { method: "POST" });
+            return request(`/instituicoes/${instituicaoId}/usuarios/${userId}`, { method: "POST" }).then(res => {
+                if (res.ok && window.AppCache) window.AppCache.del(window.AppCache.keyInstituicoesUser(userId));
+                return res;
+            });
         },
         vincularCategoriaUsuario(categoriaId, userId) {
-            return request(`/categorias/${categoriaId}/usuarios/${userId}`, { method: "POST" });
+            return request(`/categorias/${categoriaId}/usuarios/${userId}`, { method: "POST" }).then(res => {
+                if (res.ok && window.AppCache) window.AppCache.del(window.AppCache.keyCategoriasUser(userId));
+                return res;
+            });
         },
         buscarRegistrosPorData(userId, dataSelecionada) {
             return request(`/registros/${userId}`, { method: "GET" })
@@ -527,6 +631,15 @@
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
+            }).then(res => {
+                if (res.ok && window.AppCache) {
+                    const uid = obterUsuarioLogado()?.id;
+                    if (uid) {
+                        window.AppCache.invalidarRegistros(uid);
+                        window.AppCache.invalidarDashboard(uid);
+                    }
+                }
+                return res;
             });
         },
         editarSenhaUsuario(userId, payload) {
@@ -540,13 +653,33 @@
             return request(`/usuarios/${userId}`, { method: "DELETE" });
         },
         desvincularTodasInstituicoes(userId) {
-            return request(`/instituicoes/desvincular-todas-as-instituicoes/usuarios/${userId}`, { method: "PUT" });
+            return request(`/instituicoes/desvincular-todas-as-instituicoes/usuarios/${userId}`, { method: "PUT" }).then(res => {
+                if (res.ok && window.AppCache) window.AppCache.del(window.AppCache.keyInstituicoesUser(userId));
+                return res;
+            });
         },
         deletarTodosEventos(userId) {
-            return request(`/configuracoes/usuarios/${userId}/dados/deletar-tudo`, { method: "DELETE" });
+            return request(`/configuracoes/usuarios/${userId}/dados/deletar-tudo`, { method: "DELETE" }).then(res => {
+                if (res.ok && window.AppCache) {
+                    window.AppCache.invalidarRegistros(userId);
+                    window.AppCache.invalidarDashboard(userId);
+                    window.AppCache.del(window.AppCache.keyCategoriasUser(userId));
+                    window.AppCache.del(window.AppCache.keyInstituicoesUser(userId));
+                }
+                return res;
+            });
         },
         deletarRegistro(eventoId) {
-            return request(`/registros/${eventoId}`, { method: "DELETE" });
+            return request(`/registros/${eventoId}`, { method: "DELETE" }).then(res => {
+                if (res.ok && window.AppCache) {
+                    const uid = obterUsuarioLogado()?.id;
+                    if (uid) {
+                        window.AppCache.invalidarRegistros(uid);
+                        window.AppCache.invalidarDashboard(uid);
+                    }
+                }
+                return res;
+            });
         }
     };
 

@@ -330,3 +330,31 @@
     display: flex;
     flex-direction: column;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVO — Configurações
+───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .cfg-card {
+        border-radius: 16px;
+        padding: 20px 16px;
+    }
+
+    .cfg-card h2 {
+        font-size: 1.4rem;
+    }
+
+    .cfg-row .cfg-field {
+        max-width: 100%;
+        min-width: 140px;
+    }
+
+    .cfg-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .cfg-split {
+        flex-direction: column;
+    }
+}

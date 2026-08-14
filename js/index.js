@@ -75,8 +75,14 @@ function labelPeriodoCfg(cfg) {
 }
 
 async function apiFetch(url) {
+    const C = window.AppCache;
+    const userId = obterUsuarioIdDashboard();
+    if (C && userId) {
+        const cacheKey = C.keyDash(userId, url.replace(API_BASE, ''));
+        const cached = C.get(cacheKey);
+        if (cached) return cached;
+    }
     try {
-        // cache: 'no-store' garante dados frescos após importação de arquivos
         const res = await fetch(url, { cache: 'no-store' });
         if (res.status === 204) return { ok: false, json: null };
         if (!res.ok) {
@@ -84,7 +90,12 @@ async function apiFetch(url) {
             return { ok: false, json: null };
         }
         const json = await res.json();
-        return { ok: true, json };
+        const result = { ok: true, json };
+        if (C && userId) {
+            const cacheKey = C.keyDash(userId, url.replace(API_BASE, ''));
+            C.set(cacheKey, result, C.TTL.DASHBOARD);
+        }
+        return result;
     } catch (err) {
         console.error('[Dashboard] Erro ao buscar:', url, err);
         return { ok: false, json: null };
@@ -915,7 +926,7 @@ async function carregarGraficoFluxo(userId, params) {
     const renderizar = () => {
         try {
             el.innerHTML = '';
-            el.style.height = '420px';
+            el.style.height = '560px';
 
             const dark = isDark();
             const txtColor = dark
@@ -931,7 +942,7 @@ async function carregarGraficoFluxo(userId, params) {
             const chart = new google.visualization.Sankey(el);
             chart.draw(data, {
                 width: el.clientWidth || 800,
-                height: 420,
+                height: 560,
                 sankey: {
                     node: {
                         colors: getSankeyNodeColors(),

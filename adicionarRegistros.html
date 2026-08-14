@@ -54,7 +54,7 @@
                     <a href="dashboard.html"><i class='bx bx-home'></i> <span id="home">Home</span></a>
                 </li>
                 <li>
-                    <a href="adicionarRegistros.html"><i class='bx bx-file-plus'></i> <span id="add">Adicionar
+                    <a href="adicionarRegistros.html" class="nav-ativo"><i class='bx bx-file-plus'></i> <span id="add">Adicionar
                             Registros</span></a>
                 </li>
                 <li>
@@ -222,7 +222,7 @@
                         </div>
 
                         <!-- ── Instituições (tag picker) ── -->
-                        <div class="ar-tag-field">
+                        <div class="ar-tag-field ar-span-3">
                             <span class="ar-field-label">Instituições</span>
                             <div class="ar-tp-container" id="ar-tp-inst">
                                 <div class="ar-tp-display" onclick="openTagPicker(event,'inst')">
@@ -241,7 +241,7 @@
                         </div>
 
                         <!-- ── Categorias (tag picker) ── -->
-                        <div class="ar-tag-field">
+                        <div class="ar-tag-field ar-span-2">
                             <span class="ar-field-label">Categorias</span>
                             <div class="ar-tp-container" id="ar-tp-cat">
                                 <div class="ar-tp-display" onclick="openTagPicker(event,'cat')">
@@ -305,85 +305,98 @@
 
                 <!-- Campos do lote -->
                 <div class="multi-form">
-                    <div class="ar-field-wrap field-default">
-                        <input type="text" id="ipt_multi_nome" placeholder=" ">
-                        <label for="ipt_multi_nome">Título</label>
+
+                    <!-- Linha 1: campos básicos -->
+                    <div class="multi-row">
+                        <div class="ar-field-wrap field-default">
+                            <input type="text" id="ipt_multi_nome" placeholder=" ">
+                            <label for="ipt_multi_nome">Título</label>
+                        </div>
+
+                        <div class="ar-field-wrap field-default">
+                            <select id="multi_select_tipo">
+                                <option value="#">Tipo do Evento</option>
+                                <option value="Gasto">Gasto</option>
+                                <option value="Recebimento">Recebimento</option>
+                                <option value="Transferencia">Transferência</option>
+                                <option value="Poupanca">Poupança</option>
+                                <option value="Emprestimo">Empréstimo</option>
+                            </select>
+                            <label for="multi_select_tipo">Tipo do Evento</label>
+                        </div>
+
+                        <div class="ar-field-wrap field-default">
+                            <select id="multi_select_movimento" onchange="toggleParcelas('ipt_multi_parcelas', this.value)">
+                                <option value="#">Movimento</option>
+                                <option value="Debito">Débito</option>
+                                <option value="Credito">Crédito</option>
+                                <option value="Dinheiro">Dinheiro</option>
+                                <option value="Pix">Pix</option>
+                                <option value="Boleto">Boleto</option>
+                                <option value="Voucher">Voucher</option>
+                            </select>
+                            <label for="multi_select_movimento">Movimento</label>
+                        </div>
+
+                        <div class="ar-field-wrap field-small" id="wrap_multi_parcelas">
+                            <input type="number" id="ipt_multi_parcelas" placeholder=" " min="1" value="1">
+                            <label for="ipt_multi_parcelas">Parcelas</label>
+                        </div>
                     </div>
 
-                    <div class="ar-field-wrap field-default">
-                        <select id="multi_select_tipo">
-                            <option value="#">Tipo do Evento</option>
-                            <option value="Gasto">Gasto</option>
-                            <option value="Recebimento">Recebimento</option>
-                            <option value="Transferencia">Transferência</option>
-                            <option value="Poupanca">Poupança</option>
-                            <option value="Emprestimo">Empréstimo</option>
-                        </select>
-                        <label for="multi_select_tipo">Tipo do Evento</label>
-                    </div>
+                    <!-- Linha 2: seletores de instituição e categoria -->
+                    <div class="multi-row multi-row-pickers">
 
-                    <div class="ar-field-wrap field-default">
-                        <select id="multi_select_movimento" onchange="toggleParcelas('ipt_multi_parcelas', this.value)">
-                            <option value="#">Movimento</option>
-                            <option value="Debito">Débito</option>
-                            <option value="Credito">Crédito</option>
-                            <option value="Dinheiro">Dinheiro</option>
-                            <option value="Pix">Pix</option>
-                            <option value="Boleto">Boleto</option>
-                            <option value="Voucher">Voucher</option>
-                        </select>
-                        <label for="multi_select_movimento">Movimento</label>
-                    </div>
-
-                    <div class="ar-field-wrap field-small" id="wrap_multi_parcelas">
-                        <input type="number" id="ipt_multi_parcelas" placeholder=" " min="1" value="1">
-                        <label for="ipt_multi_parcelas">Parcelas</label>
-                    </div>
-
-                    <!-- Instituições tag picker -->
-                    <div class="ar-tag-field field-default">
-                        <span class="ar-field-label">Instituições</span>
-                        <div class="ar-tp-container" id="ar-tp-m-inst">
-                            <div class="ar-tp-display" onclick="openTagPicker(event,'m-inst')">
-                                <div class="ar-tp-tags" id="tp-tags-m-inst">
-                                    <span class="ar-tp-ph">Escolha...</span>
+                        <!-- Instituições tag picker -->
+                        <div class="ar-tag-field multi-inst-field">
+                            <span class="ar-field-label">Instituições</span>
+                            <div class="ar-tp-container" id="ar-tp-m-inst">
+                                <div class="ar-tp-display" onclick="openTagPicker(event,'m-inst')">
+                                    <div class="ar-tp-tags" id="tp-tags-m-inst">
+                                        <span class="ar-tp-ph">Escolha...</span>
+                                    </div>
+                                    <span class="ar-tp-arr">▾</span>
                                 </div>
-                                <span class="ar-tp-arr">▾</span>
+                                <div class="ar-tp-dd" id="tp-dd-m-inst" style="display:none;"></div>
                             </div>
-                            <div class="ar-tp-dd" id="tp-dd-m-inst" style="display:none;"></div>
+                            <div id="m-inst-amounts" class="ar-inst-amounts-wrap" style="display:none;">
+                                <p class="ar-inst-amounts-title">Valor por instituição</p>
+                            </div>
                         </div>
-                        <div id="m-inst-amounts" class="ar-inst-amounts-wrap" style="display:none;">
-                            <p class="ar-inst-amounts-title">Valor por instituição</p>
-                        </div>
-                    </div>
 
-                    <!-- Categorias tag picker -->
-                    <div class="ar-tag-field field-default">
-                        <span class="ar-field-label">Categorias</span>
-                        <div class="ar-tp-container" id="ar-tp-m-cat">
-                            <div class="ar-tp-display" onclick="openTagPicker(event,'m-cat')">
-                                <div class="ar-tp-tags" id="tp-tags-m-cat">
-                                    <span class="ar-tp-ph">Escolha...</span>
+                        <!-- Categorias tag picker -->
+                        <div class="ar-tag-field multi-cat-field">
+                            <span class="ar-field-label">Categorias</span>
+                            <div class="ar-tp-container" id="ar-tp-m-cat">
+                                <div class="ar-tp-display" onclick="openTagPicker(event,'m-cat')">
+                                    <div class="ar-tp-tags" id="tp-tags-m-cat">
+                                        <span class="ar-tp-ph">Escolha...</span>
+                                    </div>
+                                    <span class="ar-tp-arr">▾</span>
                                 </div>
-                                <span class="ar-tp-arr">▾</span>
+                                <div class="ar-tp-dd" id="tp-dd-m-cat" style="display:none;"></div>
                             </div>
-                            <div class="ar-tp-dd" id="tp-dd-m-cat" style="display:none;"></div>
                         </div>
+
                     </div>
 
-                    <div class="ar-field-wrap field-value" id="wrap_multi_valor">
-                        <input type="text" id="ipt_multi_valor" placeholder=" " inputmode="numeric" autocomplete="off">
-                        <label for="ipt_multi_valor">Valor (R$)</label>
+                    <!-- Linha 3: valor, descrição e botão -->
+                    <div class="multi-row multi-row-bottom">
+                        <div class="ar-field-wrap field-value" id="wrap_multi_valor">
+                            <input type="text" id="ipt_multi_valor" placeholder=" " inputmode="numeric" autocomplete="off">
+                            <label for="ipt_multi_valor">Valor (R$)</label>
+                        </div>
+
+                        <div class="ar-field-wrap field-description">
+                            <input type="text" id="ipt_multi_desc" placeholder=" ">
+                            <label for="ipt_multi_desc">Descrição</label>
+                        </div>
+
+                        <button class="ar-btn btn-add" onclick="adicionarAoLote()">
+                            Adicionar
+                        </button>
                     </div>
 
-                    <div class="ar-field-wrap field-description">
-                        <input type="text" id="ipt_multi_desc" placeholder=" ">
-                        <label for="ipt_multi_desc">Descrição</label>
-                    </div>
-
-                    <button class="ar-btn btn-add" onclick="adicionarAoLote()">
-                        Adicionar
-                    </button>
                 </div>
 
                 <!-- Tabela de registros -->
@@ -461,6 +474,7 @@
         </div>
     </div>
 
+    <script src="js/cache.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
     <script src="js/navbar.js?v=2"></script>
     <script src="js/adicionarRegistros.js?v=2"></script>
