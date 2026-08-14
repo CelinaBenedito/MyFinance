@@ -979,6 +979,9 @@ async function registrar() {
         // Dia do mês ou do ano
         const dia = _diaMes || _diaAnual || null;
 
+        const _btnReg = document.getElementById('btnRegistrar');
+        if (_btnReg) _btnReg.disabled = true;
+
         alerta(`Registrando recorrência...
             ${ window.MascoteApp ? window.MascoteApp.getCorrendoHTML() : '<div class="glaceonCorrendoDiv"><img class="glaceon correndo" src="/assets/gif/Gifs da Glaceon/glaceon-correndo-unscreen.gif" alt=""></div>' }`, 0);
 
@@ -998,6 +1001,7 @@ async function registrar() {
             instituicao: instituicaoList,
             detalhe: { categoriaUsuario_id: selectedCat.map(s => Number(s.id)), tituloGasto: titulo }
         }).then(async (response) => {
+            if (_btnReg) _btnReg.disabled = false;
             if (response.ok) {
                 window.dispatchEvent(new Event('xp:refresh'));
                 markFieldsForClear(['ipt_nome', 'ipt_valor', 'ipt_desc']);
@@ -1009,11 +1013,15 @@ async function registrar() {
                 alerta(`Erro ao registrar recorrência (${response.status}): ${detalhe}`);
             }
         }).catch(err => {
+            if (_btnReg) _btnReg.disabled = false;
             console.error("Erro de rede:", err);
             alerta("Erro de conexão ao registrar recorrência.");
         });
         return; // não continua para o registro normal
     }
+
+    const _btnReg2 = document.getElementById('btnRegistrar');
+    if (_btnReg2) _btnReg2.disabled = true;
 
     alerta(`Registrando...
         ${ window.MascoteApp ? window.MascoteApp.getCorrendoHTML() : '<div class="glaceonCorrendoDiv"><img class="glaceon correndo" src="/assets/gif/Gifs da Glaceon/glaceon-correndo-unscreen.gif" alt=""></div>' }`, 0);
@@ -1031,6 +1039,7 @@ async function registrar() {
         instituicao: instituicaoList,
         detalhe: { categoriaUsuario_id: selectedCat.map(s => Number(s.id)), tituloGasto: titulo }
     }).then(async (response) => {
+        if (_btnReg2) _btnReg2.disabled = false;
         if (response.ok) {
             window.dispatchEvent(new Event('xp:refresh'));
             if (selectedInst.length === 1) atualizarSaldoDisplay(selectedInst[0].id);
@@ -1044,6 +1053,7 @@ async function registrar() {
             alerta(`Erro ao registrar (${response.status}): ${detalhe}`);
         }
     }).catch(err => {
+        if (_btnReg2) _btnReg2.disabled = false;
         console.error("Erro de rede:", err);
         alerta("Erro de conexão ao registrar.");
     });

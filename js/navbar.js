@@ -273,6 +273,28 @@ window.addEventListener('resize', function () {
         } else {
             uwAvatar.innerHTML = "<i class='bx bx-user' style='font-size:1.6rem; color:var(--cor-principal);'></i>";
         }
+
+        _injetarMascoteWidget();
+    }
+
+    function _injetarMascoteWidget() {
+        if (!uwAvatar || !window.MascoteApp) return;
+        const key = window.MascoteApp.getSalvo();
+        const m = window.MascoteApp.MASCOTES[key];
+        if (!m || !m.imagens || key === 'nenhum') return;
+
+        const chain = ['fofinha02', 'fofinha', 'poder', 'balancante02', 'balancante'];
+        let src = null;
+        for (let i = 0; i < chain.length; i++) {
+            if (m.imagens[chain[i]]) { src = m.imagens[chain[i]]; break; }
+        }
+        if (!src) return;
+
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = m.nome;
+        img.className = 'uw-mascote';
+        uwAvatar.appendChild(img);
     }
 
     renderizarAvatarWidget(user);
