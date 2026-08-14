@@ -510,3 +510,98 @@ body[data-tema="branco"][data-mode="dark"] {
     --cor-emprestimo-bg: #2e0a4a;
     --cor-emprestimo-texto: #c4b5fd;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MODO VIDRO — Liquid Glass / Glassmorphism
+   Ativado ao setar data-vidro="on" no <body>
+   ══════════════════════════════════════════════════════════════ */
+
+/* Fundo vibrante para o efeito de vidro ficar visível */
+body[data-vidro="on"] .containerGeral {
+    background:
+        radial-gradient(ellipse at 10% 10%, var(--cor-principal) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 90%, var(--cor-titulo) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 40%, var(--cor-hover) 0%, transparent 55%),
+        var(--cor-fundo-pagina);
+    background-attachment: fixed;
+}
+
+/* Variáveis do modo vidro — modo claro */
+body[data-vidro="on"][data-mode="light"] {
+    --cor-fundo-card: rgba(255, 255, 255, 0.22);
+    --sombra-card: rgba(255, 255, 255, 0.18);
+    --sombra-caixa: rgba(0, 0, 0, 0.08);
+    --cor-fundo-campo: rgba(255, 255, 255, 0.15);
+    --cor-fundo-inativo: rgba(255, 255, 255, 0.30);
+    --cor-tinte-suave: rgba(255, 255, 255, 0.10);
+    --cor-tinte-medio: rgba(255, 255, 255, 0.18);
+}
+
+/* Variáveis do modo vidro — modo escuro */
+body[data-vidro="on"][data-mode="dark"] {
+    --cor-fundo-card: rgba(0, 0, 0, 0.28);
+    --sombra-card: rgba(0, 0, 0, 0.22);
+    --sombra-caixa: rgba(0, 0, 0, 0.12);
+    --cor-fundo-campo: rgba(0, 0, 0, 0.20);
+    --cor-fundo-inativo: rgba(0, 0, 0, 0.35);
+    --cor-tinte-suave: rgba(0, 0, 0, 0.10);
+    --cor-tinte-medio: rgba(0, 0, 0, 0.18);
+}
+
+/* Efeito de vidro nos cards e elementos de superfície */
+body[data-vidro="on"] .KPI,
+body[data-vidro="on"] .pf-card,
+body[data-vidro="on"] .card,
+body[data-vidro="on"] .cardRegistro,
+body[data-vidro="on"] .containerFormulario,
+body[data-vidro="on"] .conteudoModal,
+body[data-vidro="on"] .conteudoAlerta,
+body[data-vidro="on"] .conteudoTipo,
+body[data-vidro="on"] .pf-xp-wrap,
+body[data-vidro="on"] .pf-avatar {
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.40) !important;
+}
+
+body[data-vidro="on"][data-mode="dark"] .KPI,
+body[data-vidro="on"][data-mode="dark"] .pf-card,
+body[data-vidro="on"][data-mode="dark"] .card,
+body[data-vidro="on"][data-mode="dark"] .cardRegistro,
+body[data-vidro="on"][data-mode="dark"] .containerFormulario,
+body[data-vidro="on"][data-mode="dark"] .conteudoModal,
+body[data-vidro="on"][data-mode="dark"] .conteudoAlerta,
+body[data-vidro="on"][data-mode="dark"] .conteudoTipo,
+body[data-vidro="on"][data-mode="dark"] .pf-xp-wrap,
+body[data-vidro="on"][data-mode="dark"] .pf-avatar {
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Sidebar com efeito vidro */
+body[data-vidro="on"] .side-bar {
+    background: rgba(255, 255, 255, 0.18) !important;
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border-right: 1px solid rgba(255, 255, 255, 0.30);
+    color: var(--cor-texto-principal) !important;
+}
+
+body[data-vidro="on"] .side-bar a,
+body[data-vidro="on"] .side-bar li,
+body[data-vidro="on"] .side-bar i {
+    color: var(--cor-texto-principal) !important;
+}
+
+body[data-vidro="on"][data-mode="dark"] .side-bar {
+    background: rgba(0, 0, 0, 0.30) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--cor-texto-principal) !important;
+}
+
+body[data-vidro="on"][data-mode="dark"] .side-bar a,
+body[data-vidro="on"][data-mode="dark"] .side-bar li,
+body[data-vidro="on"][data-mode="dark"] .side-bar i {
+    color: var(--cor-texto-principal) !important;
+}

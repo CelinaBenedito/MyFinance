@@ -8,6 +8,12 @@ const config = document.getElementById("config");
 const tema = document.getElementById("tema");
 const caixinhaN = document.getElementById("caixinhas"); // pode ser null em páginas sem o item
 
+// Aplica modo vidro imediatamente para evitar flash
+(function () {
+    var v = localStorage.getItem("vidro");
+    if (v) document.body.setAttribute("data-vidro", v);
+})();
+
 let ativo = false;
 
 const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
@@ -367,16 +373,26 @@ _temas.forEach(function (tema) {
     });
 });
 
+function aplicarModoVidro(ativo) {
+    document.body.setAttribute("data-vidro", ativo ? "on" : "off");
+}
+
 if (_btnEscolherTema) {
     _btnEscolherTema.addEventListener("click", function () {
         document.body.setAttribute("data-tema", _temaSelecionado);
         localStorage.setItem("tema", _temaSelecionado);
+
+        var toggleVidro = document.getElementById("toggleVidro");
+        var vidroAtivo = toggleVidro ? toggleVidro.checked : localStorage.getItem("vidro") === "on";
+        aplicarModoVidro(vidroAtivo);
+        localStorage.setItem("vidro", vidroAtivo ? "on" : "off");
     });
 }
 
 window.addEventListener("DOMContentLoaded", function () {
     var temaSalvo = localStorage.getItem("tema");
     var modoSalvo = localStorage.getItem("modo");
+    var vidroSalvo = localStorage.getItem("vidro");
 
     if (temaSalvo) {
         document.body.setAttribute("data-tema", temaSalvo);
@@ -388,6 +404,17 @@ window.addEventListener("DOMContentLoaded", function () {
     }
     if (modoSalvo) {
         document.body.setAttribute("data-mode", modoSalvo);
+    }
+    if (vidroSalvo) {
+        aplicarModoVidro(vidroSalvo === "on");
+    }
+
+    // Sincroniza o toggle na página de perfil com o estado salvo
+    var toggleVidro = document.getElementById("toggleVidro");
+    var estadoVidro = document.getElementById("estadoVidro");
+    if (toggleVidro) {
+        toggleVidro.checked = vidroSalvo === "on";
+        if (estadoVidro) estadoVidro.textContent = vidroSalvo === "on" ? "ON" : "OFF";
     }
 });
 

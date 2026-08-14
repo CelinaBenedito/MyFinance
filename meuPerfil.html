@@ -356,16 +356,6 @@
             document.getElementById("estadoVidro").textContent = this.checked ? "ON" : "OFF";
         });
 
-        btnEscolher.addEventListener("click", () => {
-
-            document.body.setAttribute("data-tema", temaSelecionado);
-
-            localStorage.setItem("tema", temaSelecionado);
-            console.log("mudei 3")
-
-        });
-
-
         // ── Theme swatch selection ──
         document.querySelectorAll(".pf-tema-item").forEach(item => {
             item.addEventListener("click", () => {
