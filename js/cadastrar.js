@@ -77,6 +77,14 @@ function mensagemCadastroSegura(erro) {
     const status = Number(erro?.status || 0);
     const mensagem = (erro?.mensagem || "").toLowerCase();
 
+    // Erros de servidor (5xx) geralmente são falhas internas (ex.: banco de dados)
+    // e não devem ser interpretados pelas palavras-chave de campos abaixo, pois a
+    // mensagem crua pode conter nomes de colunas (ex.: "data_nascimento") que não
+    // refletem um problema real com o dado informado pelo usuário.
+    if (status >= 500) {
+        return "Não foi possível concluir o cadastro agora. Tente novamente em instantes. <button onclick='div_alerta.style.display=\"none\"'>OK</button>";
+    }
+
     if (
         status === 409 ||
         (
@@ -111,10 +119,6 @@ function mensagemCadastroSegura(erro) {
 
     if (mensagem.includes("email")) {
         return "Email inválido <button onclick='div_alerta.style.display=\"none\"'>OK</button>";
-    }
-
-    if (status >= 500) {
-        return "Não foi possível concluir o cadastro agora. Tente novamente em instantes. <button onclick='div_alerta.style.display=\"none\"'>OK</button>";
     }
 
     return "Erro ao criar conta. Revise os dados informados e tente novamente. <button onclick='div_alerta.style.display=\"none\"'>OK</button>";
