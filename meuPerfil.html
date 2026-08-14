@@ -163,14 +163,6 @@
                 <div class="pf-toggles">
                     <div class="pf-toggle-row">
                         <label class="pf-toggle">
-                            <input type="checkbox" id="toggleGlaceon" checked>
-                            <span class="pf-toggle-slider"></span>
-                        </label>
-                        <span class="pf-toggle-state" id="estadoGlaceon">ON</span>
-                        <span>Glaceon</span>
-                    </div>
-                    <div class="pf-toggle-row">
-                        <label class="pf-toggle">
                             <input type="checkbox" id="toggleVidro">
                             <span class="pf-toggle-slider"></span>
                         </label>
@@ -180,6 +172,14 @@
                 </div>
 
                 <button class="pf-btn" id="btnEscolherTema">Escolher</button>
+            </div>
+
+            <!-- ── MASCOTE ── -->
+            <div class="pf-card">
+                <h2>Mascote</h2>
+                <p class="pf-mascote-desc">Escolha seu companheiro de finanças — ele vai aparecer pelo site todo!</p>
+                <div id="pfMascoteGrid" class="pf-mascote-categorias"></div>
+                <button class="pf-btn" id="btnEscolherMascote">Escolher Mascote</button>
             </div>
 
             <!-- ── RESUMO DAS CONFIGURAÇÕES ── -->
@@ -345,13 +345,11 @@
     </div>
     <script src="js/cache.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
+    <script src="js/mascote.js?v=1"></script>
     <script src="js/meuPerfil.js?v=2"></script>
     <script src="js/navbar.js?v=2"></script>
     <script>
-        // ── Toggle labels ──
-        document.getElementById("toggleGlaceon").addEventListener("change", function () {
-            document.getElementById("estadoGlaceon").textContent = this.checked ? "ON" : "OFF";
-        });
+        // ── Modo Vidro toggle label ──
         document.getElementById("toggleVidro").addEventListener("change", function () {
             document.getElementById("estadoVidro").textContent = this.checked ? "ON" : "OFF";
         });
@@ -363,6 +361,103 @@
                 item.classList.add("ativo");
             });
         });
+
+        // ── Mascote Picker ──
+        (function () {
+            var grid = document.getElementById("pfMascoteGrid");
+            var btn  = document.getElementById("btnEscolherMascote");
+            if (!grid || !window.MascoteApp) return;
+
+            var M        = window.MascoteApp.MASCOTES;
+            var CATS     = window.MascoteApp.CATEGORIAS;
+            var ORDER    = window.MascoteApp.ORDEM_CATEGORIAS;
+            var selected = window.MascoteApp.getSalvo();
+
+            // Agrupa por categoria
+            var grupos = {};
+            Object.keys(M).forEach(function (key) {
+                var cat = M[key].categoria;
+                if (!grupos[cat]) grupos[cat] = [];
+                grupos[cat].push(key);
+            });
+
+            ORDER.forEach(function (cat) {
+                if (!grupos[cat]) return;
+
+                var titulo = document.createElement("div");
+                titulo.className = "pf-mascote-categoria-titulo";
+                titulo.textContent = CATS[cat] || cat;
+                grid.appendChild(titulo);
+
+                var row = document.createElement("div");
+                row.className = "pf-mascote-grid";
+
+                grupos[cat].forEach(function (key) {
+                    var m = M[key];
+
+                    var item = document.createElement("div");
+                    item.className = "pf-mascote-item"
+                        + (key === selected ? " ativo" : "")
+                        + (cat === "especial" ? " especial" : "");
+                    item.dataset.key = key;
+
+                    // Preview
+                    var preview = document.createElement("div");
+                    preview.className = "pf-mascote-preview";
+
+                    if (m.preview) {
+                        var img = document.createElement("img");
+                        img.src = m.preview;
+                        img.alt = m.nome;
+                        img.className = "pf-mascote-preview-img";
+                        img.onerror = function () {
+                            this.style.display = "none";
+                            var sp = document.createElement("span");
+                            sp.className = "pf-mascote-preview-icone";
+                            sp.textContent = m.icone;
+                            preview.appendChild(sp);
+                        };
+                        preview.appendChild(img);
+                    } else {
+                        var sp = document.createElement("span");
+                        sp.className = "pf-mascote-preview-icone";
+                        sp.textContent = m.icone;
+                        preview.appendChild(sp);
+                    }
+
+                    var label = document.createElement("span");
+                    label.className = "pf-mascote-label";
+                    label.textContent = m.nome;
+
+                    item.appendChild(preview);
+                    item.appendChild(label);
+
+                    item.addEventListener("click", function () {
+                        document.querySelectorAll(".pf-mascote-item").forEach(function (i) {
+                            i.classList.remove("ativo");
+                        });
+                        item.classList.add("ativo");
+                        grid.dataset.selecionado = key;
+                    });
+
+                    row.appendChild(item);
+                });
+
+                grid.appendChild(row);
+            });
+
+            // Botão confirmar
+            if (btn) {
+                btn.addEventListener("click", function () {
+                    var sel = grid.dataset.selecionado || window.MascoteApp.getSalvo();
+                    window.MascoteApp.aplicar(sel);
+                    window.MascoteApp.salvar(sel);
+                    var orig = btn.textContent;
+                    btn.textContent = "✔ Mascote salvo!";
+                    setTimeout(function () { btn.textContent = orig; }, 2000);
+                });
+            }
+        })();
     </script>
 </body>
 

@@ -76,6 +76,60 @@ h1 {
     justify-content: center;
 }
 
+/* ══ MASCOTE: modo "Nenhum" ═════════════════════════════════════════════ */
+body[data-mascote="nenhum"] .ar-mascot,
+body[data-mascote="nenhum"] .divimgGlaceonCostas,
+body[data-mascote="nenhum"] .glaceonCorrendoDiv,
+body[data-mascote="nenhum"] .mascote-spot {
+    display: none !important;
+}
+
+/* Ícone de fallback em estados vazios (visível apenas quando mascote=nenhum) */
+.mascote-vazio-fallback { display: none !important; }
+body[data-mascote="nenhum"] .mascote-vazio-fallback { display: block !important; }
+
+/* ══ MASCOTE: Morcegos Vampiro ══════════════════════════════════════════ */
+.mascote-bat-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    overflow: hidden;
+}
+
+.mascote-bat {
+    position: absolute;
+    line-height: 1;
+    opacity: 0.65;
+    user-select: none;
+}
+
+.mascote-bat.ltr {
+    left: 0;
+    animation: mascote-bat-ltr linear infinite;
+}
+
+.mascote-bat.rtl {
+    right: 0;
+    animation: mascote-bat-rtl linear infinite;
+}
+
+@keyframes mascote-bat-ltr {
+    0%   { transform: translateX(-120px) scaleX(1);   opacity: 0; }
+    8%   { opacity: 0.7; }
+    50%  { transform: translateX(50vw) scaleX(1) translateY(-25px); }
+    92%  { opacity: 0.7; }
+    100% { transform: translateX(calc(100vw + 120px)) scaleX(1); opacity: 0; }
+}
+
+@keyframes mascote-bat-rtl {
+    0%   { transform: translateX(120px) scaleX(-1);    opacity: 0; }
+    8%   { opacity: 0.7; }
+    50%  { transform: translateX(-50vw) scaleX(-1) translateY(-25px); }
+    92%  { opacity: 0.7; }
+    100% { transform: translateX(calc(-100vw - 120px)) scaleX(-1); opacity: 0; }
+}
+
 .containerGeral {
     display: flex;
     flex-direction: column;
@@ -1459,6 +1513,20 @@ footer a {
     padding: 16px;
     box-shadow: 0 4px 16px var(--sombra-card);
     margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.historia-mascote-wrap {
+    float: right;
+    margin: -8px -4px 4px 12px;
+}
+
+.historia-mascote-img {
+    height: 90px;
+    width: auto;
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
 }
 
 .historia-financeira-card h3 {

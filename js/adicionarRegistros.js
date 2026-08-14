@@ -980,9 +980,7 @@ async function registrar() {
         const dia = _diaMes || _diaAnual || null;
 
         alerta(`Registrando recorrência...
-            <div class="glaceonCorrendoDiv">
-                <img class="glaceon correndo" src="/assets/gif/glaceon-correndo-unscreen.gif" alt="">
-            </div>`, 0);
+            ${ window.MascoteApp ? window.MascoteApp.getCorrendoHTML() : '<div class="glaceonCorrendoDiv"><img class="glaceon correndo" src="/assets/gif/Gifs da Glaceon/glaceon-correndo-unscreen.gif" alt=""></div>' }`, 0);
 
         MainAPI.registrarRecorrente({
             financeiro: {
@@ -1018,9 +1016,7 @@ async function registrar() {
     }
 
     alerta(`Registrando...
-        <div class="glaceonCorrendoDiv">
-            <img class="glaceon correndo" src="/assets/gif/glaceon-correndo-unscreen.gif" alt="">
-        </div>`, 0);
+        ${ window.MascoteApp ? window.MascoteApp.getCorrendoHTML() : '<div class="glaceonCorrendoDiv"><img class="glaceon correndo" src="/assets/gif/Gifs da Glaceon/glaceon-correndo-unscreen.gif" alt=""></div>' }`, 0);
 
     MainAPI.registrarGasto({
         financeiro: {

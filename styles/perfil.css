@@ -409,4 +409,104 @@
     .pf-avatar i {
         font-size: 3.5rem;
     }
+
+    .pf-mascote-grid {
+        grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PICKER DE MASCOTE
+   ══════════════════════════════════════════════════════════════ */
+
+.pf-mascote-desc {
+    color: var(--cor-texto-secundario);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.pf-mascote-categorias {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pf-mascote-categoria-titulo {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cor-texto-secundario);
+    margin: 14px 0 6px;
+}
+
+.pf-mascote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+}
+
+.pf-mascote-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 6px 8px;
+    border-radius: 14px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    background: var(--cor-tinte-suave);
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    text-align: center;
+    position: relative;
+}
+
+.pf-mascote-item:hover {
+    background: var(--cor-tinte-medio);
+    transform: translateY(-2px);
+}
+
+.pf-mascote-item.ativo {
+    border-color: var(--cor-principal);
+    background: var(--cor-tinte-medio);
+}
+
+.pf-mascote-item.especial {
+    border-style: dashed;
+    border-color: var(--cor-tinte-borda);
+}
+
+.pf-mascote-item.especial.ativo {
+    border-style: solid;
+    border-color: var(--cor-principal);
+}
+
+.pf-mascote-preview {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--cor-tinte-suave);
+}
+
+.pf-mascote-preview-img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+}
+
+.pf-mascote-preview-icone {
+    font-size: 2.4rem;
+    line-height: 1;
+}
+
+.pf-mascote-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    word-break: break-word;
+    line-height: 1.2;
 }

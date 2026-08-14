@@ -193,7 +193,10 @@
 
             <!-- Estado vazio -->
             <div class="cxh-vazio" id="cxhVazio" style="display:none;">
-                <i class='bx bx-piggy-bank'></i>
+                <div class="mascote-spot cxh-mascote-vazio">
+                    <img data-mascote-tipo="fofinha" src="assets/gif/Gifs da Glaceon/glaceon fofinha.gif" alt="Mascote">
+                </div>
+                <i class='bx bx-piggy-bank mascote-vazio-fallback'></i>
                 <h3>Nenhuma caixinha encontrada</h3>
                 <p>Crie sua primeira caixinha de poupança e comece a realizar seus objetivos!</p>
                 <button class="btn-nova-caixinha" onclick="abrirModalCriar()">
@@ -442,6 +445,7 @@
 
     <script src="js/cache.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
+    <script src="js/mascote.js?v=1"></script>
     <script src="js/caixinhas.js?v=2"></script>
     <script src="js/navbar.js?v=2"></script>
 </body>

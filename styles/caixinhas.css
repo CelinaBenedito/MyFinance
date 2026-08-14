@@ -321,6 +321,12 @@
 .cxh-vazio h3 { font-size: 1.1rem; color: var(--cor-titulo); }
 .cxh-vazio p { font-size: 0.88rem; }
 
+.cxh-mascote-vazio img {
+    height: 110px;
+    width: auto;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
+}
+
 /* Loading */
 .cxh-loading {
     display: flex;
