@@ -36,13 +36,40 @@
 
     function toLocalDateKey(iso) { return iso.substring(0, 10); }
 
-    // ── Carregar eventos ─────────────────────────────────────────
+    // ── Carregar eventos do mês visível ──────────────────────────
+    let _carregando = false;
+
+    function mostrarLoadingCalendario() {
+        const grid = document.getElementById("calGrid");
+        if (grid) {
+            grid.innerHTML = `
+                <div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;
+                            justify-content:center;padding:48px 0;gap:12px;color:var(--cor-texto-secundario,#888);">
+                    <i class='bx bx-loader-alt' style="font-size:2rem;animation:spin 1s linear infinite;"></i>
+                    <span style="font-size:0.95rem;">Carregando eventos...</span>
+                </div>`;
+        }
+        const conteudo = document.getElementById("resumoConteudo");
+        const empty    = document.getElementById("resumoEmpty");
+        if (conteudo) conteudo.innerHTML = "";
+        if (empty)    { empty.textContent = "Carregando..."; empty.style.display = ""; }
+    }
+
     function carregarEventos() {
-        if (!userId) { renderizarCalendario(); return Promise.resolve(); }
-        return MainAPI.carregarRegistros(userId)
+        if (!userId) { renderizarCalendario(); mostrarMesCompleto(); return Promise.resolve(); }
+        if (_carregando) return Promise.resolve();
+        _carregando = true;
+
+        mostrarLoadingCalendario();
+        document.getElementById("mesNome").textContent = MESES[mesAtual] + " " + anoAtual;
+
+        const ano = anoAtual;
+        const mes = mesAtual + 1; // API usa 1-12
+
+        return MainAPI.buscarTodosRegistrosMes(userId, ano, mes)
             .then(registros => {
                 eventosPorDia = {};
-                registros.forEach(r => {
+                (registros || []).forEach(r => {
                     const dataISO = r.eventoFinanceiro && r.eventoFinanceiro.dataEvento;
                     if (!dataISO) return;
                     const key = toLocalDateKey(dataISO);
@@ -50,8 +77,13 @@
                     eventosPorDia[key].push(r);
                 });
                 renderizarCalendario();
+                mostrarMesCompleto();
             })
-            .catch(() => renderizarCalendario());
+            .catch(() => {
+                renderizarCalendario();
+                mostrarMesCompleto();
+            })
+            .finally(() => { _carregando = false; });
     }
 
     // ── Renderizar calendário ────────────────────────────────────
@@ -262,17 +294,15 @@
     document.getElementById("btnPrevMes").addEventListener("click", function() {
         mesAtual--;
         if (mesAtual < 0) { mesAtual = 11; anoAtual--; }
-        renderizarCalendario();
-        mostrarMesCompleto();
+        carregarEventos();
     });
 
     document.getElementById("btnNextMes").addEventListener("click", function() {
         mesAtual++;
         if (mesAtual > 11) { mesAtual = 0; anoAtual++; }
-        renderizarCalendario();
-        mostrarMesCompleto();
+        carregarEventos();
     });
 
-    carregarEventos().then(function() { mostrarMesCompleto(); });
+    carregarEventos();
 
 })();

@@ -369,24 +369,21 @@ function criarCardRegistro(registro) {
     card.className = "cardRegistro";
     card.dataset.eventoId = registroId;
     card.innerHTML = `
-        <div class="registroInfo">
+        <div class="reg-col-data">
             <div class="dataRegistro">${dia}</div>
             ${tipoBadge}
         </div>
-        <div class="registroInfo">
-            <div><p>Valor</p></div>
+        <div class="reg-col-valor">
             <div class="registroValor">${_fmtMoeda.format(valor)}</div>
         </div>
-        <div class="registroDetalhes">
+        <div class="reg-col-detalhes">
             <div class="registroTitulo">${titulo}</div>
             <div class="registroDescricao">${descricao}</div>
         </div>
-        <div class="registroDetalhes">
-            <div><p>Instituições:</p></div>
+        <div class="reg-col-insts">
             <div class="reg-tags-row">${instTags}</div>
         </div>
-        <div class="registroDetalhes">
-            <div><p>Categorias:</p></div>
+        <div class="reg-col-cats">
             <div class="reg-tags-row">${catTags}</div>
         </div>
         <div class="registroAcoes">
