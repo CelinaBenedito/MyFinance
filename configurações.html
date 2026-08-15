@@ -345,6 +345,23 @@
                     </div>
                 </div>
 
+                <!-- AJUDA / TUTORIAL -->
+                <div class="cfg-card">
+                    <h2><i class='bx bx-help-circle' style="color:var(--cor-principal);font-size:1.6rem;"></i> Ajuda</h2>
+                    <p style="color:var(--cor-texto-secundario);font-size:0.9rem;margin-bottom:16px;">
+                        Relembre o tour guiado das principais telas do sistema.
+                    </p>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <button class="cfg-btn" onclick="window.Tutorial && window.Tutorial.resetar('myfinance_tutorial_done')">
+                            <i class='bx bx-play-circle' style="margin-right:6px;"></i> Tour: Dashboard
+                        </button>
+                        <button class="cfg-btn" style="background:transparent;border:2px solid var(--cor-principal);color:var(--cor-principal);"
+                            onclick="window.Tutorial && window.Tutorial.resetar('myfinance_tutorial_adicionarRegistros_done', 'adicionarRegistros.html')">
+                            <i class='bx bx-play-circle' style="margin-right:6px;"></i> Tour: Adicionar Registros
+                        </button>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
@@ -376,3 +393,4 @@
     <script src="js/mascote.js?v=3"></script>
 <script src="js/configuracoes.js?v=2"></script>
 <script src="js/navbar.js?v=3"></script>
+<script src="js/tutorial.js?v=1"></script>

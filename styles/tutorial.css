@@ -1,0 +1,121 @@
+/* ══ TOUR / TUTORIAL ══════════════════════════════════════════════════════ */
+#tour-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9989;
+    background: transparent;
+    pointer-events: all;
+}
+
+#tour-spotlight {
+    position: fixed;
+    z-index: 9990;
+    border-radius: 10px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.68);
+    pointer-events: none;
+    transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+}
+
+#tour-tooltip {
+    position: fixed;
+    z-index: 9992;
+    background: var(--cor-fundo-card);
+    border-radius: 14px;
+    padding: 20px 22px 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    transition: top 0.3s ease, left 0.3s ease;
+}
+
+.tour-step-count {
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+    margin-bottom: 6px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+.tour-titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--cor-titulo);
+    margin-bottom: 8px;
+}
+
+.tour-texto {
+    font-size: 0.875rem;
+    color: var(--cor-texto-principal);
+    line-height: 1.6;
+    margin-bottom: 18px;
+}
+
+.tour-btns {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tour-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tour-btn-skip {
+    background: transparent;
+    border: none;
+    color: var(--cor-texto-secundario);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: color 0.2s;
+    font-family: inherit;
+}
+
+.tour-btn-skip:hover {
+    color: var(--red-700);
+}
+
+.tour-btn-nav {
+    background: transparent;
+    border: 1.5px solid var(--cor-principal);
+    color: var(--cor-principal);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 13px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-family: inherit;
+}
+
+.tour-btn-nav:hover {
+    background: var(--cor-hover);
+}
+
+.tour-btn-primary {
+    background: var(--cor-principal);
+    border: none;
+    color: var(--cor-texto-claro);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 16px;
+    border-radius: 8px;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+}
+
+.tour-btn-primary:hover {
+    opacity: 0.87;
+}
