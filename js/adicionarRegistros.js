@@ -14,18 +14,83 @@ const RegistroQueue = (function () {
     const _q = [];
     let _busy = false;
 
+    // Contadores do lote atual
+    let _total = 0;
+    let _done  = 0;
+    let _erros = 0;
+    let _autoCloseTimer = null;
+
+    const NOTIF_ID = 'sync-registros';
+
+    function _notificar() {
+        if (!window._addNotification) return;
+        const processados = _done + _erros;
+
+        if (processados === _total && _total > 0) {
+            // Lote concluído
+            if (_erros > 0) {
+                window._addNotification({
+                    id: NOTIF_ID,
+                    type: 'warning',
+                    title: 'Alguns registros falharam',
+                    subtitle: `${_done} salvo${_done !== 1 ? 's' : ''}, ${_erros} com erro`,
+                    read: false,
+                    detail: {
+                        description: `${_done} registro(s) foram salvos com sucesso, mas ${_erros} falhou(aram) ao enviar para a nuvem. Acesse a página de registros para reenviar os itens com erro.`
+                    }
+                });
+            } else {
+                window._addNotification({
+                    id: NOTIF_ID,
+                    type: 'success',
+                    title: 'Registros salvos!',
+                    subtitle: `${_done} registro${_done !== 1 ? 's' : ''} sincronizado${_done !== 1 ? 's' : ''} com sucesso`,
+                    read: false,
+                    detail: {
+                        description: `Todos os ${_done} registro(s) foram enviados e salvos na nuvem com sucesso.`
+                    }
+                });
+                // Remove notificação de sucesso automaticamente após 10s
+                if (_autoCloseTimer) clearTimeout(_autoCloseTimer);
+                _autoCloseTimer = setTimeout(function () {
+                    if (window._removeNotification) window._removeNotification(NOTIF_ID);
+                    _autoCloseTimer = null;
+                }, 10000);
+            }
+        } else if (_total > 0) {
+            // Em progresso
+            window._addNotification({
+                id: NOTIF_ID,
+                type: 'info',
+                title: 'Sincronizando registros...',
+                subtitle: `${processados} de ${_total} enviado${processados !== 1 ? 's' : ''}`,
+                read: false,
+                detail: {
+                    description: 'Seus registros estão sendo enviados para a nuvem em segundo plano. Você pode continuar cadastrando normalmente.'
+                }
+            });
+        }
+    }
+
     async function _run() {
         if (_busy || _q.length === 0) return;
         _busy = true;
         while (_q.length > 0) {
             const job = _q[0];
-            if (job.cancelled) { _q.shift(); continue; }
+            if (job.cancelled) {
+                _q.shift();
+                _total = Math.max(0, _total - 1);
+                _notificar();
+                continue;
+            }
             job.status = 'sending';
             if (job.onStatus) job.onStatus('sending');
+            _notificar();
             try {
                 const res = await MainAPI.registrarGasto(job.payload);
                 if (res.ok) {
                     job.status = 'done';
+                    _done++;
                     if (job.onStatus) job.onStatus('done');
                     if (job.onSuccess) job.onSuccess(res);
                 } else {
@@ -33,22 +98,34 @@ const RegistroQueue = (function () {
                     try { const b = await res.json(); msg = b.message || b.error || msg; } catch (_) {}
                     job.status = 'error';
                     job.errorMsg = msg;
+                    _erros++;
                     if (job.onStatus) job.onStatus('error', msg);
                 }
             } catch (e) {
                 const msg = e.message || 'Erro de rede';
                 job.status = 'error';
                 job.errorMsg = msg;
+                _erros++;
                 if (job.onStatus) job.onStatus('error', msg);
             }
             _q.shift();
+            _notificar();
         }
         _busy = false;
     }
 
     function enqueue(payload, onStatus, onSuccess) {
+        // Novo lote: reseta contadores se a fila estava vazia e ociosa
+        if (_q.length === 0 && !_busy) {
+            _total = 0; _done = 0; _erros = 0;
+        }
+        // Cancela auto-close de sucesso se novos itens chegam
+        if (_autoCloseTimer) { clearTimeout(_autoCloseTimer); _autoCloseTimer = null; }
+
+        _total++;
         const job = { payload, onStatus, onSuccess, status: 'pending', errorMsg: null, cancelled: false };
         _q.push(job);
+        _notificar();
         _run();
         return job;
     }
@@ -1078,20 +1155,20 @@ async function registrar() {
     alerta('✔ Registro enviado!<br><small>Clique nos campos de texto para editá-los.</small>', 3000);
     if (_btnReg2) _btnReg2.disabled = false;
 
-    // Submissão em background
-    MainAPI.registrarGasto(_payload).then(async response => {
-        if (response.ok) {
+    // Submissão em background via fila (integra com painel de notificações)
+    const _instSingle = selectedInst.slice();
+    RegistroQueue.enqueue(
+        _payload,
+        function (status, msg) {
+            if (status === 'error') {
+                alerta(`⚠ Falha ao salvar: ${msg || 'Erro desconhecido'}`, 0);
+            }
+        },
+        function () {
             window.dispatchEvent(new Event('xp:refresh'));
-            if (selectedInst.length === 1) atualizarSaldoDisplay(selectedInst[0].id);
-        } else {
-            let detalhe = '';
-            try { const c = await response.json(); detalhe = c.message || c.error || JSON.stringify(c); } catch (_) {}
-            alerta(`⚠ Falha ao salvar (${response.status}): ${detalhe}`, 0);
+            if (_instSingle.length === 1) atualizarSaldoDisplay(_instSingle[0].id);
         }
-    }).catch(err => {
-        console.error('[registrar] Erro de rede:', err);
-        alerta('⚠ Erro de conexão ao registrar. Verifique sua internet.', 0);
-    });
+    );
 }
 
 function atualizarSaldo(valor, instituicao) {

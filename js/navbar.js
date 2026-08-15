@@ -1011,14 +1011,34 @@ window.addEventListener("DOMContentLoaded", function () {
         banner.style.display = 'none';
     }
 
+    function _buildUpdateNotif(info) {
+        return {
+            id: 'update-available',
+            type: 'update',
+            title: 'Nova versão disponível!',
+            subtitle: 'Atual: v' + info.currentVersion + '  →  Nova: v' + info.latestVersion,
+            date: Date.now(),
+            read: false,
+            detail: {
+                description: 'Uma nova versão do MyFinance está disponível para instalação. Clique em <strong>Atualizar agora</strong> para baixar e instalar automaticamente.',
+                releaseNotes: (info.releaseNotes || '').trim() || null,
+                actionLabel: 'Atualizar agora',
+                onAction: function () { mostrarBanner(info); }
+            }
+        };
+    }
+
     function dismissarAtualizacao() {
         _isDismissed = true;
         localStorage.setItem('mf-update-dismissed', 'true');
         ocultarBanner();
 
-        // Adiciona ao contador de notificações
         if (_updateInfo) {
-            window._updateNotificationBadge(1);
+            if (window._addNotification) {
+                window._addNotification(_buildUpdateNotif(_updateInfo));
+            } else {
+                window._updateNotificationBadge(1);
+            }
         }
     }
 
@@ -1115,7 +1135,11 @@ window.addEventListener("DOMContentLoaded", function () {
                 const dismissed = localStorage.getItem('mf-update-dismissed');
                 if (dismissed === 'true') {
                     _isDismissed = true;
-                    window._updateNotificationBadge(1);
+                    if (window._addNotification) {
+                        window._addNotification(_buildUpdateNotif(info));
+                    } else {
+                        window._updateNotificationBadge(1);
+                    }
                     return; // Não mostra o banner automaticamente
                 }
 
@@ -1133,11 +1157,12 @@ window.addEventListener("DOMContentLoaded", function () {
                 // Mostra o banner se não foi dismissed nem snoozed
                 mostrarBanner(info);
             } else {
-                // Se não há atualização, limpa o dismissed e badge
+                // Se não há atualização, limpa o dismissed, badge e notificação
                 _isDismissed = false;
                 _updateInfo = null;
                 localStorage.removeItem('mf-update-dismissed');
                 window._updateNotificationBadge(0);
+                if (window._removeNotification) window._removeNotification('update-available');
             }
         } catch (e) {
             // Silencioso: sem internet ou backend ainda não inicializado
@@ -1146,7 +1171,9 @@ window.addEventListener("DOMContentLoaded", function () {
 
     // ── Função para mostrar notificações quando clicar no sino ──
     window._showUpdateNotifications = function() {
-        if (_updateInfo && _isDismissed) {
+        if (window._showNotificationPanel) {
+            window._showNotificationPanel();
+        } else if (_updateInfo && _isDismissed) {
             mostrarBanner(_updateInfo);
         }
     };
@@ -1157,9 +1184,274 @@ window.addEventListener("DOMContentLoaded", function () {
     setInterval(verificarAtualizacao, CHECK_INTERVAL_MS);
 })();
 
+/*---------------- Painel de Notificações ----------------*/
+(function () {
+    let _panelOpen = false;
+    window._mfNotifications = window._mfNotifications || [];
+
+    const html = `
+    <div id="mf-notif-backdrop" style="
+        display:none;position:fixed;inset:0;z-index:1998;
+        background:rgba(0,0,0,0.35);"></div>
+
+    <div id="mf-notif-panel" style="
+        position:fixed;top:0;right:0;height:100vh;z-index:1999;
+        width:360px;max-width:100vw;
+        background:var(--cor-fundo-pagina,#f8fafc);
+        border-left:1.5px solid var(--cor-tinte-borda,#e2e8f0);
+        box-shadow:-8px 0 32px rgba(0,0,0,0.14);
+        display:flex;flex-direction:column;
+        transform:translateX(100%);
+        transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);">
+
+        <div style="
+            padding:20px 20px 16px;
+            border-bottom:1.5px solid var(--cor-tinte-borda,#e2e8f0);
+            display:flex;align-items:center;justify-content:space-between;
+            background:var(--cor-fundo-card,#fff);">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <i class='bx bx-bell' style="font-size:1.4rem;color:var(--cor-principal,#6366f1);"></i>
+                <h2 style="margin:0;font-size:1.15rem;font-weight:700;color:var(--cor-titulo);">Notificações</h2>
+            </div>
+            <button id="mf-notif-close" aria-label="Fechar painel" style="
+                background:none;border:none;cursor:pointer;padding:6px;
+                border-radius:8px;color:var(--cor-texto-secundario);
+                font-size:1.3rem;line-height:1;transition:background 0.15s;">
+                <i class='bx bx-x'></i>
+            </button>
+        </div>
+
+        <div id="mf-notif-list" style="flex:1;overflow-y:auto;padding:14px;"></div>
+    </div>
+
+    <div id="mf-notif-modal-overlay" style="
+        display:none;position:fixed;inset:0;z-index:2100;
+        background:rgba(0,0,0,0.5);
+        align-items:center;justify-content:center;">
+        <div id="mf-notif-modal" style="
+            background:var(--cor-fundo-card,#fff);
+            border-radius:16px;padding:28px;
+            width:min(480px,90vw);max-height:82vh;overflow-y:auto;
+            box-shadow:0 20px 60px rgba(0,0,0,0.22);
+            animation:mfNotifModalIn 0.22s ease;">
+            <div id="mf-notif-modal-body"></div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes mfNotifModalIn {
+            from { opacity:0; transform:scale(0.95) translateY(10px); }
+            to   { opacity:1; transform:scale(1)    translateY(0);    }
+        }
+        #mf-notif-close:hover { background:var(--cor-hover,#f1f5f9); }
+        .mf-notif-item {
+            display:flex;align-items:flex-start;gap:12px;
+            padding:14px;border-radius:12px;cursor:pointer;
+            background:var(--cor-fundo-card,#fff);
+            border:1.5px solid var(--cor-tinte-borda,#e2e8f0);
+            margin-bottom:10px;
+            transition:border-color 0.15s,box-shadow 0.15s;
+        }
+        .mf-notif-item:hover {
+            border-color:var(--cor-principal,#6366f1);
+            box-shadow:0 4px 14px rgba(99,102,241,0.12);
+        }
+        .mf-notif-item.mf-unread {
+            border-color:var(--cor-principal,#6366f1);
+        }
+        .mf-notif-icon {
+            width:38px;height:38px;border-radius:50%;flex-shrink:0;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.15rem;color:#fff;
+        }
+        .mf-notif-icon.update  { background:var(--cor-principal,#6366f1); }
+        .mf-notif-icon.info    { background:#0ea5e9; }
+        .mf-notif-icon.warning { background:#f59e0b; }
+        .mf-notif-icon.success { background:#10b981; }
+        .mf-notif-empty {
+            text-align:center;padding:52px 20px;
+            color:var(--cor-texto-secundario);
+        }
+        .mf-notif-empty i { font-size:2.6rem;display:block;margin-bottom:12px;opacity:0.35; }
+        #mf-notif-modal-action:hover  { opacity:0.85; }
+        #mf-notif-modal-dismiss:hover { background:var(--cor-hover,#e2e8f0) !important; }
+        @media (max-width: 480px) {
+            #mf-notif-panel { width:100vw; }
+        }
+    </style>`;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    const panel         = document.getElementById('mf-notif-panel');
+    const backdrop      = document.getElementById('mf-notif-backdrop');
+    const closeBtn      = document.getElementById('mf-notif-close');
+    const listEl        = document.getElementById('mf-notif-list');
+    const modalOverlay  = document.getElementById('mf-notif-modal-overlay');
+    const modalBody     = document.getElementById('mf-notif-modal-body');
+
+    const ICONS = {
+        update:  'bx-cloud-download',
+        info:    'bx-info-circle',
+        warning: 'bx-error',
+        success: 'bx-check-circle'
+    };
+
+    function openPanel() {
+        _panelOpen = true;
+        panel.style.transform = 'translateX(0)';
+        backdrop.style.display = 'block';
+        renderList();
+    }
+
+    function closePanel() {
+        _panelOpen = false;
+        panel.style.transform = 'translateX(100%)';
+        backdrop.style.display = 'none';
+    }
+
+    function closeModal() {
+        modalOverlay.style.display = 'none';
+    }
+
+    function openModal(notif) {
+        notif.read = true;
+        updateBadge();
+        if (_panelOpen) renderList();
+
+        const iconName = ICONS[notif.type] || 'bx-bell';
+        const d = notif.detail || {};
+
+        modalBody.innerHTML = `
+            <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;">
+                <span class="mf-notif-icon ${notif.type || 'info'}" style="width:46px;height:46px;font-size:1.4rem;flex-shrink:0;">
+                    <i class='bx ${iconName}'></i>
+                </span>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;font-size:1.05rem;color:var(--cor-titulo);margin-bottom:4px;">${notif.title}</div>
+                    ${notif.subtitle ? `<div style="font-size:0.8rem;color:var(--cor-texto-secundario);">${notif.subtitle}</div>` : ''}
+                </div>
+                <button id="mf-notif-modal-xclose" aria-label="Fechar" style="
+                    background:none;border:none;cursor:pointer;
+                    color:var(--cor-texto-secundario);font-size:1.3rem;
+                    padding:4px;flex-shrink:0;"><i class='bx bx-x'></i>
+                </button>
+            </div>
+            ${d.description ? `<p style="font-size:0.9rem;color:var(--cor-texto-secundario);line-height:1.65;margin-bottom:16px;">${d.description}</p>` : ''}
+            ${d.releaseNotes ? `
+            <div style="
+                border:1px solid var(--cor-tinte-borda,#e2e8f0);border-radius:8px;
+                padding:12px 14px;background:var(--cor-fundo-pagina,#f8fafc);
+                font-size:0.82rem;color:var(--cor-texto-secundario);
+                line-height:1.5;white-space:pre-line;max-height:200px;overflow-y:auto;
+                margin-bottom:16px;">${d.releaseNotes}</div>` : ''}
+            <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                ${d.actionLabel ? `<button id="mf-notif-modal-action" style="
+                    padding:10px 20px;border-radius:9px;border:none;cursor:pointer;
+                    background:var(--cor-principal,#6366f1);color:#fff;
+                    font-size:0.9rem;font-weight:600;transition:opacity 0.18s;">
+                    ${d.actionLabel}
+                </button>` : ''}
+                <button id="mf-notif-modal-dismiss" style="
+                    padding:10px 18px;border-radius:9px;cursor:pointer;
+                    background:var(--cor-fundo-pagina,#f1f5f9);color:var(--cor-texto-principal);
+                    font-size:0.9rem;font-weight:600;
+                    border:1px solid var(--cor-tinte-borda,#ccc);transition:background 0.18s;">
+                    Fechar
+                </button>
+            </div>`;
+
+        modalOverlay.style.display = 'flex';
+
+        document.getElementById('mf-notif-modal-xclose').onclick = closeModal;
+        document.getElementById('mf-notif-modal-dismiss').onclick = closeModal;
+
+        var actionBtn = document.getElementById('mf-notif-modal-action');
+        if (actionBtn && d.onAction) {
+            actionBtn.addEventListener('click', function () {
+                closeModal();
+                closePanel();
+                d.onAction();
+            });
+        }
+    }
+
+    function renderList() {
+        var notifs = window._mfNotifications;
+        if (!notifs || notifs.length === 0) {
+            listEl.innerHTML = `
+                <div class="mf-notif-empty">
+                    <i class='bx bx-bell-off'></i>
+                    <div style="font-size:0.95rem;font-weight:600;color:var(--cor-titulo);margin-bottom:6px;">Tudo tranquilo por aqui!</div>
+                    <div style="font-size:0.83rem;">Você não tem notificações no momento.</div>
+                </div>`;
+            return;
+        }
+
+        listEl.innerHTML = notifs.map(function (notif, i) {
+            var iconName = ICONS[notif.type] || 'bx-bell';
+            var date = notif.date
+                ? new Date(notif.date).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+                : '';
+            return `
+            <div class="mf-notif-item${notif.read ? '' : ' mf-unread'}" data-idx="${i}">
+                <span class="mf-notif-icon ${notif.type || 'info'}">
+                    <i class='bx ${iconName}'></i>
+                </span>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:${notif.read ? '500' : '700'};font-size:0.92rem;color:var(--cor-titulo);margin-bottom:3px;">${notif.title}</div>
+                    ${notif.subtitle ? `<div style="font-size:0.78rem;color:var(--cor-texto-secundario);margin-bottom:4px;">${notif.subtitle}</div>` : ''}
+                    ${date ? `<div style="font-size:0.72rem;color:var(--cor-texto-secundario);opacity:0.7;">${date}</div>` : ''}
+                </div>
+                ${!notif.read ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--cor-principal,#6366f1);flex-shrink:0;margin-top:4px;"></span>' : ''}
+            </div>`;
+        }).join('');
+
+        listEl.querySelectorAll('.mf-notif-item').forEach(function (el) {
+            el.addEventListener('click', function () {
+                openModal(window._mfNotifications[parseInt(el.getAttribute('data-idx'), 10)]);
+            });
+        });
+    }
+
+    function updateBadge() {
+        var unread = (window._mfNotifications || []).filter(function (n) { return !n.read; }).length;
+        window._updateNotificationBadge(unread);
+    }
+
+    // ── API pública ──
+    window._addNotification = function (notif) {
+        window._mfNotifications = window._mfNotifications || [];
+        notif.id   = notif.id   || ('notif-' + Date.now());
+        notif.date = notif.date || Date.now();
+        if (notif.read === undefined) notif.read = false;
+        var idx = window._mfNotifications.findIndex(function (n) { return n.id === notif.id; });
+        if (idx >= 0) {
+            window._mfNotifications[idx] = notif;
+        } else {
+            window._mfNotifications.unshift(notif);
+        }
+        updateBadge();
+        if (_panelOpen) renderList();
+    };
+
+    window._removeNotification = function (id) {
+        window._mfNotifications = (window._mfNotifications || []).filter(function (n) { return n.id !== id; });
+        updateBadge();
+        if (_panelOpen) renderList();
+    };
+
+    window._showNotificationPanel = function () { openPanel(); };
+    window._showUpdateNotifications = function () { openPanel(); };
+
+    closeBtn.addEventListener('click', closePanel);
+    backdrop.addEventListener('click', closePanel);
+    modalOverlay.addEventListener('click', function (e) {
+        if (e.target === modalOverlay) closeModal();
+    });
+})();
+
 /*---------------- Skeleton Shimmer — carregamento estilo Instagram ----------------*/
 (function () {
-    // Seletores dos cards que recebem o efeito enquanto os dados carregam
     var SK_SEL = [
         '.KPI',
         '.campo-grafico',

@@ -723,10 +723,8 @@
         modal.querySelector("#cfgImportConfirmar").onclick = async () => {
             const selBanco = modal.querySelector("#cfgImportBanco");
             const msg = modal.querySelector("#cfgImportMsg");
-            const btn = modal.querySelector("#cfgImportConfirmar");
 
             const bancoId = selBanco ? selBanco.value : "";
-            // O backend espera o NOME da instituição, não o ID
             const bancoNome = selBanco && selBanco.selectedIndex >= 0
                 ? selBanco.options[selBanco.selectedIndex].textContent.trim()
                 : "";
@@ -743,15 +741,27 @@
                 return;
             }
 
-            msg.style.display = "none";
-            btn.disabled = true;
-            btn.textContent = "Importando...";
-            btn.style.opacity = "0.7";
+            // Fecha o modal imediatamente e processa em background
+            fechar();
+
+            const nomeArquivo = arquivo.name;
+            const NOTIF_ID = 'import-arquivo';
+
+            if (window._addNotification) {
+                window._addNotification({
+                    id: NOTIF_ID,
+                    type: 'info',
+                    title: 'Importando arquivo...',
+                    subtitle: nomeArquivo,
+                    read: false,
+                    detail: {
+                        description: `O arquivo <strong>${nomeArquivo}</strong> está sendo processado em segundo plano. Você será avisado quando a importação for concluída.`
+                    }
+                });
+            }
 
             try {
                 const formData = new FormData();
-                // O backend espera: @RequestParam MultipartFile arquivo
-                //                   @RequestParam(required = false) String bancoNome
                 formData.append("arquivo", arquivo);
                 if (bancoNome) formData.append("bancoNome", bancoNome);
 
@@ -761,22 +771,54 @@
                 });
 
                 if (res.ok || res.status === 204) {
-                    fechar();
-                    mostrarAlerta("Dados importados com sucesso!");
+                    if (window._addNotification) {
+                        window._addNotification({
+                            id: NOTIF_ID,
+                            type: 'success',
+                            title: 'Importação concluída!',
+                            subtitle: nomeArquivo,
+                            read: false,
+                            detail: {
+                                description: `O arquivo <strong>${nomeArquivo}</strong> foi importado com sucesso. Os dados já estão disponíveis no sistema.`
+                            }
+                        });
+                    } else {
+                        mostrarAlerta("Dados importados com sucesso!");
+                    }
                 } else {
                     let detalhe = `HTTP ${res.status}`;
                     try { const corpo = await res.json(); detalhe = corpo.message || detalhe; } catch (_) {}
-                    msg.textContent = `Erro ao importar: ${detalhe}`;
-                    msg.style.display = "";
+                    if (window._addNotification) {
+                        window._addNotification({
+                            id: NOTIF_ID,
+                            type: 'warning',
+                            title: 'Falha na importação',
+                            subtitle: nomeArquivo,
+                            read: false,
+                            detail: {
+                                description: `Não foi possível importar o arquivo <strong>${nomeArquivo}</strong>.<br><br><strong>Detalhe:</strong> ${detalhe}`
+                            }
+                        });
+                    } else {
+                        mostrarAlerta(`Erro ao importar: ${detalhe}`);
+                    }
                 }
             } catch (e) {
                 console.error("Erro ao importar dados:", e);
-                msg.textContent = "Erro de conexão ao importar. Verifique se o servidor está ativo.";
-                msg.style.display = "";
-            } finally {
-                btn.disabled = false;
-                btn.textContent = "Importar";
-                btn.style.opacity = "1";
+                if (window._addNotification) {
+                    window._addNotification({
+                        id: NOTIF_ID,
+                        type: 'warning',
+                        title: 'Erro de conexão na importação',
+                        subtitle: nomeArquivo,
+                        read: false,
+                        detail: {
+                            description: `Não foi possível conectar ao servidor para importar o arquivo <strong>${nomeArquivo}</strong>. Verifique sua conexão e tente novamente.`
+                        }
+                    });
+                } else {
+                    mostrarAlerta("Erro de conexão ao importar. Verifique se o servidor está ativo.");
+                }
             }
         };
 
