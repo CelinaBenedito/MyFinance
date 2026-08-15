@@ -348,7 +348,7 @@ body[data-mascote="nenhum"] .mascote-vazio-fallback { display: block !important;
     min-width: 0;
     justify-content: center;
     align-items: start;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 #graficoDonut {
@@ -2161,7 +2161,7 @@ body[data-mascote="nenhum"] .uw-mascote { display: none; }
     .containerGraficos {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
-        overflow: hidden;
+        overflow-x: hidden;
     }
 
     .containerGraficos .campo-grafico[style*="span 2"] {
