@@ -832,6 +832,13 @@
 .ar-lote-btn:hover { background: var(--cor-tinte-medio); }
 .ar-lote-btn.delete:hover { background: var(--red-100); color: var(--red-700); }
 .ar-lote-btn.edit:hover { background: var(--cor-tinte-medio); color: var(--cor-principal); }
+.ar-lote-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+.ar-lote-status { font-size: 1rem; font-weight: 700; }
+.ar-ls-done  { color: var(--cor-principal, #4caf50); }
+.ar-ls-error { color: var(--red-700, #c62828); cursor: help; }
+.ar-ls-send  { opacity: 0.8; }
+.ar-ls-pend  { opacity: 0.5; }
 
 /* ─────────────────────────────────────────────────────────────
    RESPONSIVO — Adicionar Registros

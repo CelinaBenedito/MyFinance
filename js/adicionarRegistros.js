@@ -8,6 +8,55 @@ const userId = usuarioLogado ? usuarioLogado.id : null;
 let _alertaTimer = null;
 
 /* ══════════════════════════════════════════════════
+   Fila de envio em background (modo múltiplos registros)
+══════════════════════════════════════════════════ */
+const RegistroQueue = (function () {
+    const _q = [];
+    let _busy = false;
+
+    async function _run() {
+        if (_busy || _q.length === 0) return;
+        _busy = true;
+        while (_q.length > 0) {
+            const job = _q[0];
+            if (job.cancelled) { _q.shift(); continue; }
+            job.status = 'sending';
+            if (job.onStatus) job.onStatus('sending');
+            try {
+                const res = await MainAPI.registrarGasto(job.payload);
+                if (res.ok) {
+                    job.status = 'done';
+                    if (job.onStatus) job.onStatus('done');
+                    if (job.onSuccess) job.onSuccess(res);
+                } else {
+                    let msg = `HTTP ${res.status}`;
+                    try { const b = await res.json(); msg = b.message || b.error || msg; } catch (_) {}
+                    job.status = 'error';
+                    job.errorMsg = msg;
+                    if (job.onStatus) job.onStatus('error', msg);
+                }
+            } catch (e) {
+                const msg = e.message || 'Erro de rede';
+                job.status = 'error';
+                job.errorMsg = msg;
+                if (job.onStatus) job.onStatus('error', msg);
+            }
+            _q.shift();
+        }
+        _busy = false;
+    }
+
+    function enqueue(payload, onStatus, onSuccess) {
+        const job = { payload, onStatus, onSuccess, status: 'pending', errorMsg: null, cancelled: false };
+        _q.push(job);
+        _run();
+        return job;
+    }
+
+    return { enqueue };
+})();
+
+/* ══════════════════════════════════════════════════
    Alertas
 ══════════════════════════════════════════════════ */
 function habilitarFecharAlertaAoClicarFora() {
@@ -916,19 +965,6 @@ async function registrar() {
         if (!algumValor) return alerta("Informe o valor para cada instituição");
     }
 
-    // Verificar saldo quando o tipo exige débito (exceto crédito, que não debita imediatamente)
-    // Usa saldo-debito para não considerar o limite de crédito em transações de débito
-    if ((tipo === 'Gasto' || tipo === 'Transferencia') && selectedInst.length === 1 && movimento !== 'Credito') {
-        try {
-            const resSaldo = await fetch(`https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net/instituicoes/saldo-debito/${Number(selectedInst[0].id)}`);
-            if (resSaldo.ok) {
-                const saldo = await resSaldo.json();
-                if (Number(saldo) < valor)
-                    return alerta(`Saldo insuficiente. Disponível: R$ ${Number(saldo).toFixed(2)}`);
-            }
-        } catch (e) { console.warn("Não foi possível verificar saldo:", e); }
-    }
-
     // Montar lista de instituições (com valor individual quando múltiplas)
     const instituicaoList = selectedInst.map(s => {
         let instValor = valor;
@@ -1023,10 +1059,7 @@ async function registrar() {
     const _btnReg2 = document.getElementById('btnRegistrar');
     if (_btnReg2) _btnReg2.disabled = true;
 
-    alerta(`Registrando...
-        ${ window.MascoteApp ? window.MascoteApp.getCorrendoHTML() : '<div class="glaceonCorrendoDiv"><img class="glaceon correndo" src="/assets/gif/Gifs da Glaceon/glaceon-correndo-unscreen.gif" alt=""></div>' }`, 0);
-
-    MainAPI.registrarGasto({
+    const _payload = {
         financeiro: {
             usuario_id: userId,
             tipo,
@@ -1038,24 +1071,26 @@ async function registrar() {
         },
         instituicao: instituicaoList,
         detalhe: { categoriaUsuario_id: selectedCat.map(s => Number(s.id)), tituloGasto: titulo }
-    }).then(async (response) => {
-        if (_btnReg2) _btnReg2.disabled = false;
+    };
+
+    // Feedback imediato — re-habilita o botão antes da resposta do servidor
+    markFieldsForClear(['ipt_nome', 'ipt_valor', 'ipt_desc']);
+    alerta('✔ Registro enviado!<br><small>Clique nos campos de texto para editá-los.</small>', 3000);
+    if (_btnReg2) _btnReg2.disabled = false;
+
+    // Submissão em background
+    MainAPI.registrarGasto(_payload).then(async response => {
         if (response.ok) {
             window.dispatchEvent(new Event('xp:refresh'));
             if (selectedInst.length === 1) atualizarSaldoDisplay(selectedInst[0].id);
-            // Manter campos – marcar para limpar ao clicar
-            markFieldsForClear(['ipt_nome', 'ipt_valor', 'ipt_desc']);
-            alerta('✔ Registro realizado com sucesso!<br><small>Clique nos campos de texto para editá-los.</small>', 3000);
         } else {
-            let detalhe = "";
-            try { const corpo = await response.json(); detalhe = corpo.message || corpo.error || JSON.stringify(corpo); }
-            catch (_) { detalhe = `HTTP ${response.status}`; }
-            alerta(`Erro ao registrar (${response.status}): ${detalhe}`);
+            let detalhe = '';
+            try { const c = await response.json(); detalhe = c.message || c.error || JSON.stringify(c); } catch (_) {}
+            alerta(`⚠ Falha ao salvar (${response.status}): ${detalhe}`, 0);
         }
     }).catch(err => {
-        if (_btnReg2) _btnReg2.disabled = false;
-        console.error("Erro de rede:", err);
-        alerta("Erro de conexão ao registrar.");
+        console.error('[registrar] Erro de rede:', err);
+        alerta('⚠ Erro de conexão ao registrar. Verifique sua internet.', 0);
     });
 }
 
@@ -1240,7 +1275,7 @@ function adicionarAoLote() {
         ? instituicaoList.reduce((acc, i) => acc + i.valor, 0)
         : valor;
 
-    lote.push({
+    const novoItem = {
         financeiro: { usuario_id: userId, tipo, valor: valorTotal, descricao: desc, dataEvento: data },
         instituicao: instituicaoList,
         detalhe: { categoriaUsuario_id: selectedCat.map(s => Number(s.id)), tituloGasto: titulo },
@@ -1249,8 +1284,23 @@ function adicionarAoLote() {
             instNome: selectedInst.map(s => s.label).join(', '),
             categorias: selectedCat.map(s => s.label).join(', '),
             valor: valorTotal
-        }
-    });
+        },
+        _status: 'pending',
+        _errorMsg: null,
+        _job: null
+    };
+    lote.push(novoItem);
+
+    // Inicia envio em background imediatamente
+    novoItem._job = RegistroQueue.enqueue(
+        { financeiro: novoItem.financeiro, instituicao: novoItem.instituicao, detalhe: novoItem.detalhe },
+        function (status, msg) {
+            novoItem._status = status;
+            novoItem._errorMsg = msg || null;
+            renderizarLote();
+        },
+        function () { window.dispatchEvent(new Event('xp:refresh')); }
+    );
 
     renderizarLote();
 
@@ -1261,12 +1311,19 @@ function adicionarAoLote() {
 function renderizarLote() {
     const tbody = document.getElementById('corpoLote');
     if (lote.length === 0) {
-        tbody.innerHTML = `<tr id="loteVazio"><td colspan="6" class="ar-lote-vazio">Nenhum registro adicionado ainda.</td></tr>`;
+        tbody.innerHTML = `<tr id="loteVazio"><td colspan="7" class="ar-lote-vazio">Nenhum registro adicionado ainda.</td></tr>`;
         return;
     }
     tbody.innerHTML = '';
     lote.forEach((item, i) => {
         const d = item._display;
+        const status = item._status || 'pending';
+        const statusIcon = status === 'done'    ? '<span class="ar-lote-status ar-ls-done"  title="Salvo">✔</span>'
+                         : status === 'error'   ? `<span class="ar-lote-status ar-ls-error" title="${item._errorMsg || 'Erro'}">✗</span>`
+                         : status === 'sending' ? '<span class="ar-lote-status ar-ls-send"  title="Enviando...">⏳</span>'
+                         :                        '<span class="ar-lote-status ar-ls-pend"  title="Aguardando envio">⌛</span>';
+        const canEdit   = status === 'pending' || status === 'error';
+        const canRemove = status !== 'sending';
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${d.titulo}</td>
@@ -1274,10 +1331,11 @@ function renderizarLote() {
             <td>${d.movimento}</td>
             <td>${d.instNome}</td>
             <td>R$ ${d.valor.toFixed(2)}</td>
+            <td style="text-align:center">${statusIcon}</td>
             <td>
                 <div class="ar-lote-actions">
-                    <button class="ar-lote-btn edit" onclick="editarDoLote(${i})" title="Editar">✏</button>
-                    <button class="ar-lote-btn delete" onclick="removerDoLote(${i})" title="Remover">✕</button>
+                    <button class="ar-lote-btn edit"   ${canEdit   ? '' : 'disabled'} onclick="editarDoLote(${i})"  title="Editar">✏</button>
+                    <button class="ar-lote-btn delete" ${canRemove ? '' : 'disabled'} onclick="removerDoLote(${i})" title="Remover">✕</button>
                 </div>
             </td>`;
         tbody.appendChild(tr);
@@ -1285,6 +1343,8 @@ function renderizarLote() {
 }
 
 function removerDoLote(i) {
+    const item = lote[i];
+    if (item && item._job && item._job.status === 'pending') item._job.cancelled = true;
     lote.splice(i, 1);
     renderizarLote();
 }
@@ -1292,6 +1352,9 @@ function removerDoLote(i) {
 function editarDoLote(i) {
     const item = lote[i];
     const d    = item._display;
+
+    // Cancela envio pendente se ainda não foi enviado
+    if (item._job && item._job.status === 'pending') item._job.cancelled = true;
 
     // Preencher campos do formulário
     document.getElementById('ipt_multi_nome').value = d.titulo;
@@ -1339,23 +1402,41 @@ function editarDoLote(i) {
 
 function salvarLote() {
     if (lote.length === 0) return alerta('Nenhum registro no lote');
-    alerta(`Salvando ${lote.length} registro(s)...`, 0);
-    const promessas = lote.map(item => MainAPI.registrarGasto({
-        financeiro: item.financeiro,
-        instituicao: item.instituicao,
-        detalhe: item.detalhe
-    }));
-    Promise.all(promessas).then(respostas => {
-        const erros = respostas.filter(r => !r.ok).length;
-        if (erros === 0) {
-            window.dispatchEvent(new Event('xp:refresh'));
-            lote = [];
-            renderizarLote();
-            alerta(`${respostas.length} registro(s) salvos com sucesso!<br><button onclick="document.getElementById('div_alerta').style.display='none'">OK</button>`, 0);
-        } else {
-            alerta(`${erros} erro(s) ao salvar. Verifique e tente novamente.`);
-        }
-    }).catch(() => alerta('Erro ao conectar ao servidor'));
+
+    const done    = lote.filter(i => i._status === 'done').length;
+    const sending = lote.filter(i => i._status === 'sending').length;
+    const pending = lote.filter(i => i._status === 'pending').length;
+    const errors  = lote.filter(i => i._status === 'error');
+
+    if (sending + pending > 0) {
+        alerta(`⏳ ${sending + pending} registro(s) ainda sendo enviados... ${done} já salvos.`, 3000);
+        return;
+    }
+
+    if (errors.length > 0) {
+        // Reenvia os itens com erro
+        errors.forEach(item => {
+            item._status = 'pending';
+            item._errorMsg = null;
+            item._job = RegistroQueue.enqueue(
+                { financeiro: item.financeiro, instituicao: item.instituicao, detalhe: item.detalhe },
+                function (status, msg) {
+                    item._status = status;
+                    item._errorMsg = msg || null;
+                    renderizarLote();
+                },
+                function () { window.dispatchEvent(new Event('xp:refresh')); }
+            );
+        });
+        renderizarLote();
+        alerta(`↻ Reenviando ${errors.length} registro(s) com erro...`, 3000);
+        return;
+    }
+
+    // Todos enviados com sucesso
+    lote = [];
+    renderizarLote();
+    alerta(`✔ ${done} registro(s) salvos com sucesso!`, 3000);
 }
 
 /* ══════════════════════════════════════════════════
