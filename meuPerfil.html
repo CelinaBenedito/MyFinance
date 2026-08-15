@@ -340,6 +340,45 @@
                 </div>
 
                 <button id="btnEditarSenha" onclick="editarSenhaUsuario()" class="pf-btn">Alterar Senha</button>
+
+                <hr style="border:none;border-top:1px solid var(--cor-principal);opacity:0.25;margin:4px 0;">
+                <h3 style="color:var(--cor-titulo);font-size:1.2rem;font-weight:700;margin:0;">Bloqueio do Perfil</h3>
+                <p style="color:var(--cor-texto-secundario);font-size:0.9rem;margin:0;">
+                    Defina uma senha local para proteger o acesso ao seu perfil na tela de seleção de contas.
+                </p>
+
+                <div class="pf-toggles">
+                    <div class="pf-toggle-row">
+                        <label class="pf-toggle">
+                            <input type="checkbox" id="toggleBloqueoPerfil" onchange="onToggleBloqueoPerfil(this.checked)">
+                            <span class="pf-toggle-slider"></span>
+                        </label>
+                        <span class="pf-toggle-state" id="estadoBloqueoPerfil">OFF</span>
+                        <span>Ativar bloqueio do perfil</span>
+                    </div>
+                </div>
+
+                <div id="secaoBloqueoPerfil" style="display:none;flex-direction:column;gap:16px;">
+                    <div class="pf-campo" id="campoBloqueoAtual" style="display:none;">
+                        <label>Senha Atual do Perfil:</label>
+                        <input type="password" id="edBloqueoAtual" placeholder="Senha atual do perfil...">
+                    </div>
+                    <div class="pf-campo">
+                        <label>Nova Senha do Perfil:</label>
+                        <input type="password" id="edBloqueoNova" placeholder="Nova senha do perfil...">
+                    </div>
+                    <div class="pf-campo">
+                        <label>Confirmar Senha do Perfil:</label>
+                        <input type="password" id="edBloqueoConf" placeholder="Confirmar senha...">
+                    </div>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <button onclick="salvarBloqueoPerfil()" class="pf-btn">Salvar</button>
+                        <button id="btnRemoverBloqueio" onclick="removerBloqueoPerfil()" class="pf-btn"
+                            style="background:transparent;color:var(--cor-principal);border:2px solid var(--cor-principal);display:none;">
+                            Remover Bloqueio
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- AÇÕES CRÍTICAS -->

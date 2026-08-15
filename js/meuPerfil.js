@@ -284,6 +284,8 @@
             carregarInstituicoes(),
             carregarCategorias()
         ]);
+
+        carregarBloqueoPerfil();
     }
 
     window.addEventListener("xp:refresh", carregarXpPerfil);
@@ -849,4 +851,166 @@
             }
         });
     }
+    // ── BLOQUEIO DE PERFIL ────────────────────────────────────────
+
+    async function hashSenhaPerfil(senha) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(senha);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function obterPerfisLS() {
+        try { return JSON.parse(localStorage.getItem("perfis") || "[]"); } catch (_) { return []; }
+    }
+
+    function salvarPerfisLS(perfis) {
+        const json = JSON.stringify(perfis);
+        localStorage.setItem("perfis", json);
+        if (window.desktopBridge) {
+            try { window.desktopBridge.savePerfis(json); } catch (_) {}
+        }
+    }
+
+    function carregarBloqueoPerfil() {
+        const perfis = obterPerfisLS();
+        const perfil = perfis.find(p => String(p.id) === String(userId));
+        const temBloqueio = !!(perfil && perfil.senhaPerfil);
+
+        const toggle = document.getElementById("toggleBloqueoPerfil");
+        const estado = document.getElementById("estadoBloqueoPerfil");
+        const secao = document.getElementById("secaoBloqueoPerfil");
+        const campoAtual = document.getElementById("campoBloqueoAtual");
+        const btnRemover = document.getElementById("btnRemoverBloqueio");
+
+        if (!toggle) return;
+        toggle.checked = temBloqueio;
+        if (estado) estado.textContent = temBloqueio ? "ON" : "OFF";
+
+        if (temBloqueio) {
+            secao.style.display = "flex";
+            if (campoAtual) campoAtual.style.display = "flex";
+            if (btnRemover) btnRemover.style.display = "";
+        } else {
+            secao.style.display = "none";
+        }
+    }
+
+    window.onToggleBloqueoPerfil = function (checked) {
+        const estado = document.getElementById("estadoBloqueoPerfil");
+        const secao = document.getElementById("secaoBloqueoPerfil");
+        const campoAtual = document.getElementById("campoBloqueoAtual");
+        const btnRemover = document.getElementById("btnRemoverBloqueio");
+
+        if (checked) {
+            if (estado) estado.textContent = "ON";
+            secao.style.display = "flex";
+            if (campoAtual) campoAtual.style.display = "none";
+            if (btnRemover) btnRemover.style.display = "none";
+            const edNova = document.getElementById("edBloqueoNova");
+            const edConf = document.getElementById("edBloqueoConf");
+            if (edNova) edNova.value = "";
+            if (edConf) edConf.value = "";
+        } else {
+            const perfis = obterPerfisLS();
+            const perfil = perfis.find(p => String(p.id) === String(userId));
+            if (perfil && perfil.senhaPerfil) {
+                document.getElementById("toggleBloqueoPerfil").checked = true;
+                if (estado) estado.textContent = "ON";
+                mostrarAlerta("Para remover o bloqueio, informe a senha atual e clique em 'Remover Bloqueio'.");
+                return;
+            }
+            if (estado) estado.textContent = "OFF";
+            secao.style.display = "none";
+        }
+    };
+
+    window.salvarBloqueoPerfil = async function () {
+        const edAtual = document.getElementById("edBloqueoAtual");
+        const edNova = document.getElementById("edBloqueoNova");
+        const edConf = document.getElementById("edBloqueoConf");
+
+        const senhaNova = edNova?.value?.trim();
+        const senhaConf = edConf?.value?.trim();
+
+        if (!senhaNova || !senhaConf) {
+            mostrarAlerta("Preencha a nova senha e a confirmação.");
+            return;
+        }
+        if (senhaNova !== senhaConf) {
+            mostrarAlerta("A nova senha e a confirmação não coincidem.");
+            return;
+        }
+        if (senhaNova.length < 4) {
+            mostrarAlerta("A senha deve ter pelo menos 4 caracteres.");
+            return;
+        }
+
+        const perfis = obterPerfisLS();
+        const idx = perfis.findIndex(p => String(p.id) === String(userId));
+
+        if (idx !== -1 && perfis[idx].senhaPerfil) {
+            const senhaAtual = edAtual?.value?.trim();
+            if (!senhaAtual) {
+                mostrarAlerta("Informe a senha atual do perfil.");
+                return;
+            }
+            const hashAtual = await hashSenhaPerfil(senhaAtual);
+            if (hashAtual !== perfis[idx].senhaPerfil) {
+                mostrarAlerta("Senha atual incorreta.");
+                return;
+            }
+        }
+
+        const hashNova = await hashSenhaPerfil(senhaNova);
+
+        if (idx !== -1) {
+            perfis[idx].senhaPerfil = hashNova;
+        } else {
+            const u = JSON.parse(localStorage.getItem("usuarioLogado") || "null") || {};
+            perfis.push({ id: userId, nome: u.nome || "", sobrenome: u.sobrenome || "", senhaPerfil: hashNova });
+        }
+
+        salvarPerfisLS(perfis);
+        if (edAtual) edAtual.value = "";
+        if (edNova) edNova.value = "";
+        if (edConf) edConf.value = "";
+
+        carregarBloqueoPerfil();
+        mostrarAlerta("Bloqueio de perfil configurado com sucesso.");
+    };
+
+    window.removerBloqueoPerfil = async function () {
+        const edAtual = document.getElementById("edBloqueoAtual");
+        const senhaAtual = edAtual?.value?.trim();
+
+        const perfis = obterPerfisLS();
+        const idx = perfis.findIndex(p => String(p.id) === String(userId));
+
+        if (idx !== -1 && perfis[idx].senhaPerfil) {
+            if (!senhaAtual) {
+                mostrarAlerta("Informe a senha atual do perfil para removê-la.");
+                return;
+            }
+            const hashAtual = await hashSenhaPerfil(senhaAtual);
+            if (hashAtual !== perfis[idx].senhaPerfil) {
+                mostrarAlerta("Senha atual incorreta.");
+                return;
+            }
+        }
+
+        mostrarConfirmacao("Remover o bloqueio deste perfil?", () => {
+            const perfisAtual = obterPerfisLS();
+            const idxAtual = perfisAtual.findIndex(p => String(p.id) === String(userId));
+            if (idxAtual !== -1) {
+                delete perfisAtual[idxAtual].senhaPerfil;
+                salvarPerfisLS(perfisAtual);
+            }
+            if (edAtual) edAtual.value = "";
+            carregarBloqueoPerfil();
+            mostrarAlerta("Bloqueio do perfil removido.");
+        });
+    };
+
 })();
