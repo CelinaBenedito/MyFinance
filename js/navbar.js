@@ -8,9 +8,16 @@ const config = document.getElementById("config");
 const tema = document.getElementById("tema");
 const caixinhaN = document.getElementById("caixinhas"); // pode ser null em páginas sem o item
 
+// Retorna a chave de tema com prefixo do usuário logado
+function _themeKey(key) {
+    var u = JSON.parse(localStorage.getItem('usuarioLogado') || 'null');
+    var id = (u && u.id) ? u.id : 'guest';
+    return key + '_' + id;
+}
+
 // Aplica modo vidro imediatamente para evitar flash
 (function () {
-    var v = localStorage.getItem("vidro");
+    var v = localStorage.getItem(_themeKey("vidro"));
     if (v) document.body.setAttribute("data-vidro", v);
 })();
 
@@ -377,7 +384,7 @@ window.addEventListener('resize', function () {
 /*---------------- Tema dark — FAB flutuante ----------------*/
 
 // Aplica modo salvo antes do render para evitar flash
-var _modoSalvo = localStorage.getItem("modo");
+var _modoSalvo = localStorage.getItem(_themeKey("modo"));
 if (_modoSalvo === "dark") {
     document.body.setAttribute("data-mode", "dark");
 }
@@ -402,19 +409,19 @@ function aplicarModoVidro(ativo) {
 if (_btnEscolherTema) {
     _btnEscolherTema.addEventListener("click", function () {
         document.body.setAttribute("data-tema", _temaSelecionado);
-        localStorage.setItem("tema", _temaSelecionado);
+        localStorage.setItem(_themeKey("tema"), _temaSelecionado);
 
         var toggleVidro = document.getElementById("toggleVidro");
-        var vidroAtivo = toggleVidro ? toggleVidro.checked : localStorage.getItem("vidro") === "on";
+        var vidroAtivo = toggleVidro ? toggleVidro.checked : localStorage.getItem(_themeKey("vidro")) === "on";
         aplicarModoVidro(vidroAtivo);
-        localStorage.setItem("vidro", vidroAtivo ? "on" : "off");
+        localStorage.setItem(_themeKey("vidro"), vidroAtivo ? "on" : "off");
     });
 }
 
 window.addEventListener("DOMContentLoaded", function () {
-    var temaSalvo = localStorage.getItem("tema");
-    var modoSalvo = localStorage.getItem("modo");
-    var vidroSalvo = localStorage.getItem("vidro");
+    var temaSalvo = localStorage.getItem(_themeKey("tema"));
+    var modoSalvo = localStorage.getItem(_themeKey("modo"));
+    var vidroSalvo = localStorage.getItem(_themeKey("vidro"));
 
     if (temaSalvo) {
         document.body.setAttribute("data-tema", temaSalvo);
@@ -583,7 +590,7 @@ window.addEventListener("DOMContentLoaded", function () {
             var atual = document.body.getAttribute("data-mode");
             var novo  = atual === "dark" ? "light" : "dark";
             document.body.setAttribute("data-mode", novo);
-            localStorage.setItem("modo", novo);
+            localStorage.setItem(_themeKey("modo"), novo);
             atualizarTooltip();
         });
     }

@@ -392,8 +392,15 @@
 
     var ORDEM_CATEGORIAS = ["especial", "eeveelution", "fogo", "eletrico", "agua", "planta", "psiquico", "fantasma", "sombrio", "lutador", "normal"];
 
+    // Retorna a chave de mascote com prefixo do usuário logado
+    function _mascoteKey() {
+        var u = JSON.parse(localStorage.getItem('usuarioLogado') || 'null');
+        var id = (u && u.id) ? u.id : 'guest';
+        return 'mascote_' + id;
+    }
+
     // Aplica data-mascote imediatamente para evitar flash
-    var _salvo = localStorage.getItem("mascote") || "glaceon";
+    var _salvo = localStorage.getItem(_mascoteKey()) || "glaceon";
     document.body.setAttribute("data-mascote", _salvo);
 
     // ══ Morcegos (modo Vampiro) ═════════════════════════════════════════
@@ -547,7 +554,7 @@
     // ══ HTML do mascote correndo (para alertas de carregamento) ═════════
 
     function getCorrendoHTML() {
-        var key = localStorage.getItem("mascote") || "glaceon";
+        var key = localStorage.getItem(_mascoteKey()) || "glaceon";
         var mascote = MASCOTES[key];
 
         if (!mascote || key === "nenhum") return "";
@@ -582,7 +589,7 @@
         ORDEM_CATEGORIAS: ORDEM_CATEGORIAS,
         aplicar: aplicarMascote,
         salvar: function (key) {
-            localStorage.setItem("mascote", key);
+            localStorage.setItem(_mascoteKey(), key);
             _salvo = key;
             aplicarMascote(key);
             if (key === "vampiro") {
@@ -593,7 +600,7 @@
             }
         },
         getSalvo: function () {
-            return localStorage.getItem("mascote") || "glaceon";
+            return localStorage.getItem(_mascoteKey()) || "glaceon";
         },
         getCorrendoHTML: getCorrendoHTML
     };
