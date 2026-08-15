@@ -1274,7 +1274,6 @@
         };
     });
 
-    // ── APAGAR REGISTROS ─────────────────────────────────────────
     window.apagarRegistrosPeriodo = function () {
         if (!cfgDeleteInicio || !cfgDeleteFim) {
             mostrarAlerta("Escolha a data inicial e a data final do período.");
@@ -1292,6 +1291,18 @@
         mostrarConfirmacao(
             `Apagar todos os registros de ${cfgCalFormatar(cfgDeleteInicio)} até ${cfgCalFormatar(cfgDeleteFim)}? Esta ação é irreversível.`,
             async () => {
+                const NOTIF_ID = 'apagar-periodo';
+                const periodoLabel = `${cfgCalFormatar(cfgDeleteInicio)} → ${cfgCalFormatar(cfgDeleteFim)}`;
+                if (window._addNotification) {
+                    window._addNotification({
+                        id: NOTIF_ID,
+                        type: 'info',
+                        title: 'Apagando registros do período...',
+                        subtitle: periodoLabel,
+                        read: false,
+                        detail: { description: `Os registros do período <strong>${periodoLabel}</strong> estão sendo removidos da nuvem.` }
+                    });
+                }
                 try {
                     const res = await fetch(`${API}/configuracoes/${cfgId}/dados/periodo-tempo`, {
                         method: "DELETE",
@@ -1299,19 +1310,52 @@
                         body: JSON.stringify({ dataInical: cfgDeleteInicio, dataFinal: cfgDeleteFim })
                     });
                     if (res.status === 204) {
-                        mostrarAlerta("Registros do período apagados com sucesso!");
                         cfgDeleteInicio = cfgDeleteFim = null;
                         const lI = document.getElementById("cfgDeleteInicioLabel");
                         const lF = document.getElementById("cfgDeleteFimLabel");
                         if (lI) lI.textContent = "";
                         if (lF) lF.textContent = "";
+                        if (window._addNotification) {
+                            window._addNotification({
+                                id: NOTIF_ID,
+                                type: 'success',
+                                title: 'Registros apagados com sucesso!',
+                                subtitle: periodoLabel,
+                                read: false,
+                                detail: { description: `Todos os registros do período <strong>${periodoLabel}</strong> foram removidos com sucesso.` }
+                            });
+                        } else {
+                            mostrarAlerta("Registros do período apagados com sucesso!");
+                        }
                     } else {
                         const txt = await res.text();
-                        mostrarAlerta(`Erro ao apagar registros (HTTP ${res.status}): ${txt}`);
+                        if (window._addNotification) {
+                            window._addNotification({
+                                id: NOTIF_ID,
+                                type: 'warning',
+                                title: 'Falha ao apagar registros',
+                                subtitle: periodoLabel,
+                                read: false,
+                                detail: { description: `Não foi possível apagar os registros do período <strong>${periodoLabel}</strong>.<br><br><strong>Detalhe:</strong> HTTP ${res.status} — ${txt}` }
+                            });
+                        } else {
+                            mostrarAlerta(`Erro ao apagar registros (HTTP ${res.status}): ${txt}`);
+                        }
                     }
                 } catch (e) {
                     console.error("Erro ao apagar registros por período:", e);
-                    mostrarAlerta("Erro ao apagar registros do período.");
+                    if (window._addNotification) {
+                        window._addNotification({
+                            id: NOTIF_ID,
+                            type: 'warning',
+                            title: 'Erro de conexão ao apagar',
+                            subtitle: periodoLabel,
+                            read: false,
+                            detail: { description: `Erro de conexão ao tentar apagar os registros do período <strong>${periodoLabel}</strong>. Verifique sua internet e tente novamente.` }
+                        });
+                    } else {
+                        mostrarAlerta("Erro ao apagar registros do período.");
+                    }
                 }
             }
         );
@@ -1326,19 +1370,66 @@
         mostrarConfirmacao(
             "Apagar TODOS os registros do usuário? Esta ação é irreversível.",
             async () => {
+                const NOTIF_ID = 'apagar-todos';
+                if (window._addNotification) {
+                    window._addNotification({
+                        id: NOTIF_ID,
+                        type: 'info',
+                        title: 'Apagando todos os registros...',
+                        subtitle: 'Aguardando confirmação do servidor',
+                        read: false,
+                        detail: { description: 'Todos os seus registros financeiros estão sendo removidos permanentemente da nuvem.' }
+                    });
+                }
                 try {
                     const res = await fetch(`${API}/configuracoes/usuarios/${userId}/dados/deletar-tudo`, {
                         method: "DELETE"
                     });
                     if (res.status === 204) {
-                        mostrarAlerta("Todos os registros foram apagados com sucesso!");
+                        if (window._addNotification) {
+                            window._addNotification({
+                                id: NOTIF_ID,
+                                type: 'success',
+                                title: 'Todos os registros apagados!',
+                                subtitle: 'Operação concluída com sucesso',
+                                read: false,
+                                detail: { description: 'Todos os seus registros financeiros foram removidos permanentemente da nuvem.' }
+                            });
+                        } else {
+                            mostrarAlerta("Todos os registros foram apagados com sucesso!");
+                        }
+                    } else if (res.status === 404) {
+                        if (window._removeNotification) window._removeNotification(NOTIF_ID);
+                        mostrarAlerta("Não há registros para apagar.");
                     } else {
                         const txt = await res.text();
-                        mostrarAlerta(`Erro ao apagar registros (HTTP ${res.status}): ${txt}`);
+                        if (window._addNotification) {
+                            window._addNotification({
+                                id: NOTIF_ID,
+                                type: 'warning',
+                                title: 'Falha ao apagar registros',
+                                subtitle: `HTTP ${res.status}`,
+                                read: false,
+                                detail: { description: `Não foi possível apagar todos os registros.<br><br><strong>Detalhe:</strong> HTTP ${res.status} — ${txt}` }
+                            });
+                        } else {
+                            mostrarAlerta(`Erro ao apagar registros (HTTP ${res.status}): ${txt}`);
+                        }
                     }
                 } catch (e) {
                     console.error("Erro ao apagar todos os registros:", e);
-                    mostrarAlerta("Erro ao apagar todos os registros.");
+                    if (window._addNotification) {
+                        window._addNotification({
+                            id: NOTIF_ID,
+                            type: 'warning',
+                            title: 'Erro de conexão ao apagar',
+                            subtitle: 'Operação não concluída',
+                            read: false,
+                            detail: { description: 'Erro de conexão ao tentar apagar todos os registros. Verifique sua internet e tente novamente.' }
+                        });
+                    } else {
+                        mostrarAlerta("Erro ao apagar todos os registros.");
+                    }
                 }
             }
         );
