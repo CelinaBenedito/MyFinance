@@ -194,12 +194,29 @@ function getGraficoAntColor() {
         'padrao-dark':     '#FBBF24',   // âmbar claro
         'vampirico-light': '#1D4ED8',   // azul — contrasta com vermelho
         'vampirico-dark':  '#60A5FA',   // azul claro
-        'ceu-azul-light':  '#7C3AED',   // roxo — contrasta com ciano
-        'ceu-azul-dark':   '#A78BFA',   // roxo claro
         'purpura-light':   '#059669',   // verde — contrasta com roxo
         'purpura-dark':    '#34D399',   // verde claro
         'branco-light':    '#F59E0B',   // âmbar
         'branco-dark':     '#FBBF24',   // âmbar claro
+        /* Temas Pokémon */
+        'fogo-light':      '#0891B2',   // ciano — contrasta com laranja
+        'fogo-dark':       '#22D3EE',
+        'agua-light':      '#F59E0B',   // âmbar — contrasta com azul
+        'agua-dark':       '#FBBF24',
+        'planta-light':    '#CC6600',   // laranja-âmbar — contrasta com verde folha
+        'planta-dark':     '#F97316',
+        'eletrico-light':  '#7C3AED',   // violeta — contrasta com amarelo
+        'eletrico-dark':   '#A78BFA',
+        'psiquico-light':  '#CC5588',   // pink magenta — detalhe da cauda do Mewtwo
+        'psiquico-dark':   '#EE88BB',
+        'dragao-light':    '#F59E0B',   // âmbar — contrasta com roxo
+        'dragao-dark':     '#FBBF24',
+        'fada-light':      '#5BBAE8',   // azul bebê — contrasta com rosa (olhos da Sylveon)
+        'fada-dark':       '#7DD3FC',
+        'sombrio-light':   '#7C3AED',   // roxo — contrasta com preto/dourado
+        'sombrio-dark':    '#A78BFA',
+        'gelo-light':      '#F59E0B',   // âmbar — contrasta com azul gelo
+        'gelo-dark':       '#FBBF24',
     };
     return map[`${tema}-${mode}`] || '#F59E0B';
 }
