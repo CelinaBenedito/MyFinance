@@ -448,7 +448,8 @@ async function deletarCaixinhaAtual()  { pedirConfirmacaoDeletar(); }
 // ════════════════════════════════════════════════════════════════
 // MODAL APORTE
 // ════════════════════════════════════════════════════════════════
-function abrirModalAporteDaAtual() {
+function abrirModalAporteDaAtual(ev) {
+    if (ev) ev.stopPropagation();
     if (!_caixinhaAtual || !_caixinhaAtual.isAtiva) return;
     const atual = _caixinhaAtual;
     fecharModalDet();
@@ -474,9 +475,9 @@ async function abrirModalAporte(caixinha) {
     document.getElementById('inputAporteDescricao').value = '';
     document.getElementById('selectAporteMovimento').value = 'Debito';
 
+    document.getElementById('modalAporteOverlay').classList.add('aberto');
     preencherInstituicoesAporte(caixinha);
     await preencherCategoriasAporte();
-    document.getElementById('modalAporteOverlay').classList.add('aberto');
 }
 
 function fecharModalAporte() {
@@ -513,6 +514,8 @@ function preencherInstituicoesAporte(caixinha) {
 
 async function preencherCategoriasAporte() {
     const select = document.getElementById('selectAporteCategoria');
+    select.innerHTML = '<option value="">Carregando categorias...</option>';
+
     if (_categoriasUsuario.length === 0) {
         try {
             const categorias = await MainAPI.getTipos(_usuario.id);
