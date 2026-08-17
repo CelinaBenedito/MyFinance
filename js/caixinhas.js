@@ -34,12 +34,6 @@ async function iniciarPagina() {
         return;
     }
 
-    // Aplicar tema do localStorage
-    const temaSalvo = localStorage.getItem('tema');
-    const modoSalvo = localStorage.getItem('modo');
-    if (temaSalvo) document.body.setAttribute('data-tema', temaSalvo);
-    if (modoSalvo) document.body.setAttribute('data-mode', modoSalvo);
-
     // Aplicar máscara de moeda
     MainAPI.aplicarMascaraMoeda(document.getElementById('inputValorMeta'));
     // Aplicar máscara de data

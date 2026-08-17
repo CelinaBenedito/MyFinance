@@ -1352,12 +1352,6 @@
         }
         _userId = usuario.id;
 
-        // Aplica tema salvo
-        const temaSalvo = localStorage.getItem("tema");
-        const modoSalvo = localStorage.getItem("modo");
-        if (temaSalvo) document.body.setAttribute("data-tema", temaSalvo);
-        if (modoSalvo === "dark") document.body.setAttribute("data-mode", "dark");
-
         inicializarPeriodo();
 
         await Promise.all([
