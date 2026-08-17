@@ -428,6 +428,9 @@
                 <button class="btn-cxh-reabrir"   id="btnDetReabrir"   onclick="pedirConfirmacaoReabrir()" style="display:none;">
                     <i class='bx bx-lock-open'></i> Reabrir
                 </button>
+                <button class="btn-cxh-aportar"   id="btnDetAportar"   onclick="abrirModalAporteDaAtual()">
+                    <i class='bx bx-plus-circle'></i> Adicionar saldo
+                </button>
                 <button class="btn-cxh-editar"    id="btnDetEditar"    onclick="editarCaixinhaAtual()">
                     <i class='bx bx-edit'></i> Editar
                 </button>
@@ -446,6 +449,75 @@
         </div><!-- /modal -->
     </div>
 
+    <!-- ════════════════════════════════════════════════════════
+         MODAL: APORTE NA CAIXINHA
+    ════════════════════════════════════════════════════════ -->
+    <div class="cxh-modal-overlay" id="modalAporteOverlay" onclick="fecharModalAporteOutside(event)">
+        <div class="cxh-modal" id="modalAporte">
+            <div class="cxh-modal-header">
+                <h2 id="modalAporteTitulo"><i class='bx bx-plus-circle'></i> Adicionar saldo</h2>
+                <button class="cxh-modal-close" onclick="fecharModalAporte()"><i class='bx bx-x'></i></button>
+            </div>
+
+            <div class="cxh-modal-body">
+                <div class="cxh-aporte-resumo" id="aporteResumoCaixinha">Caixinha: –</div>
+
+                <div class="cxh-campo-wrap">
+                    <label class="cxh-campo-label">Valor do aporte *</label>
+                    <input type="text" id="inputAporteValor" class="cxh-campo-input" placeholder="R$ 0,00" />
+                </div>
+
+                <div class="cxh-campo-row">
+                    <div class="cxh-campo-wrap">
+                        <label class="cxh-campo-label">Instituição *</label>
+                        <select id="selectAporteInstituicao" class="cxh-campo-input"></select>
+                    </div>
+                    <div class="cxh-campo-wrap">
+                        <label class="cxh-campo-label">Movimento *</label>
+                        <select id="selectAporteMovimento" class="cxh-campo-input">
+                            <option value="Debito">Débito</option>
+                            <option value="Credito">Crédito</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Pix">Pix</option>
+                            <option value="Boleto">Boleto</option>
+                            <option value="Voucher">Voucher</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="cxh-campo-row">
+                    <div class="cxh-campo-wrap">
+                        <label class="cxh-campo-label">Categoria *</label>
+                        <select id="selectAporteCategoria" class="cxh-campo-input"></select>
+                    </div>
+                    <div class="cxh-campo-wrap">
+                        <label class="cxh-campo-label">Data *</label>
+                        <input type="date" id="inputAporteData" class="cxh-campo-input" />
+                    </div>
+                </div>
+
+                <div class="cxh-campo-wrap">
+                    <label class="cxh-campo-label">Título *</label>
+                    <input type="text" id="inputAporteTitulo" class="cxh-campo-input" maxlength="120" placeholder="Ex: Aporte mensal" />
+                </div>
+
+                <div class="cxh-campo-wrap">
+                    <label class="cxh-campo-label">Descrição (opcional)</label>
+                    <input type="text" id="inputAporteDescricao" class="cxh-campo-input" maxlength="220" placeholder="Observações do aporte" />
+                </div>
+            </div>
+
+            <div class="cxh-modal-footer">
+                <button class="btn-cxh-cancelar" onclick="fecharModalAporte()">
+                    <i class='bx bx-x'></i> Cancelar
+                </button>
+                <button class="btn-cxh-aportar-primario" id="btnSalvarAporte" onclick="salvarAporteCaixinha()">
+                    <i class='bx bx-save'></i> Salvar aporte
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/cache.js?v=1"></script>
     <script src="js/main.js?v=2"></script>
     <script src="js/mascote.js?v=3"></script>
@@ -454,4 +526,3 @@
 </body>
 
 </html>
-

@@ -13,6 +13,8 @@ let _editandoId     = null;        // id sendo editado (null = criar)
 let _tipoRendimento = 'CDI';       // tipo selecionado no form
 let _instsSelecionadas = new Set(); // ids de instituicaoUsuario selecionados
 let _todasInstituicoes = [];       // lista de instituições do usuário
+let _categoriasUsuario = [];       // categorias disponíveis para registrar aporte
+let _caixinhaAporteAtual = null;   // caixinha selecionada no modal de aporte
 
 // ── Defaults de taxa por tipo ──────────────────────────────────
 const TAXA_DEFAULTS = {
@@ -300,12 +302,15 @@ function abrirModalDetalhes(c) {
     // Botões: mostrar Encerrar OU Reabrir conforme status
     const btnEnc = document.getElementById('btnDetEncerrar');
     const btnReab = document.getElementById('btnDetReabrir');
+    const btnAporte = document.getElementById('btnDetAportar');
     if (encerrada) {
         btnEnc.style.display  = 'none';
         btnReab.style.display = '';
+        if (btnAporte) btnAporte.style.display = 'none';
     } else {
         btnEnc.style.display  = '';
         btnReab.style.display = 'none';
+        if (btnAporte) btnAporte.style.display = '';
     }
 
     document.getElementById('modalDetOverlay').classList.add('aberto');
@@ -439,6 +444,158 @@ async function confirmarDeletar() {
 // Mantidas por compatibilidade (não usam mais confirm() nativo)
 async function encerrarCaixinhaAtual() { pedirConfirmacaoEncerrar(); }
 async function deletarCaixinhaAtual()  { pedirConfirmacaoDeletar(); }
+
+// ════════════════════════════════════════════════════════════════
+// MODAL APORTE
+// ════════════════════════════════════════════════════════════════
+function abrirModalAporteDaAtual() {
+    if (!_caixinhaAtual || !_caixinhaAtual.isAtiva) return;
+    const atual = _caixinhaAtual;
+    fecharModalDet();
+    abrirModalAporte(atual);
+}
+
+async function abrirModalAporte(caixinha) {
+    if (!caixinha || !caixinha.isAtiva) {
+        mostrarToast('Selecione uma caixinha ativa para aportar.', 'erro');
+        return;
+    }
+
+    _caixinhaAporteAtual = caixinha;
+    document.getElementById('modalAporteTitulo').innerHTML = `<i class='bx bx-plus-circle'></i> Adicionar saldo em "${escHtml(caixinha.nome)}"`;
+    document.getElementById('aporteResumoCaixinha').textContent = `Caixinha: ${caixinha.nome}`;
+
+    const inputValor = document.getElementById('inputAporteValor');
+    MainAPI.resetarMascaraMoeda(inputValor);
+    MainAPI.aplicarMascaraMoeda(inputValor);
+
+    document.getElementById('inputAporteData').value = hojeISO();
+    document.getElementById('inputAporteTitulo').value = `Aporte - ${caixinha.nome}`;
+    document.getElementById('inputAporteDescricao').value = '';
+    document.getElementById('selectAporteMovimento').value = 'Debito';
+
+    preencherInstituicoesAporte(caixinha);
+    await preencherCategoriasAporte();
+    document.getElementById('modalAporteOverlay').classList.add('aberto');
+}
+
+function fecharModalAporte() {
+    document.getElementById('modalAporteOverlay').classList.remove('aberto');
+    _caixinhaAporteAtual = null;
+}
+
+function fecharModalAporteOutside(e) {
+    if (e.target === document.getElementById('modalAporteOverlay')) fecharModalAporte();
+}
+
+function preencherInstituicoesAporte(caixinha) {
+    const select = document.getElementById('selectAporteInstituicao');
+    const vinculadas = Array.isArray(caixinha.instituicoes) ? caixinha.instituicoes : [];
+
+    if (vinculadas.length === 0) {
+        select.innerHTML = '<option value="">Sem instituição vinculada</option>';
+        return;
+    }
+
+    select.innerHTML = vinculadas.map(inst => {
+        const id = Number(inst.id);
+        if (!Number.isFinite(id) || id <= 0) return '';
+        const nomeFallback = _todasInstituicoes.find(i => Number(i.id) === id);
+        const nome = inst.nome
+            || nomeFallback?.intituicao?.nome
+            || nomeFallback?.instituicao?.nome
+            || nomeFallback?.nomeInstituicao
+            || nomeFallback?.nome
+            || `Instituição ${id}`;
+        return `<option value="${id}">${escHtml(nome)}</option>`;
+    }).filter(Boolean).join('');
+}
+
+async function preencherCategoriasAporte() {
+    const select = document.getElementById('selectAporteCategoria');
+    if (_categoriasUsuario.length === 0) {
+        try {
+            const categorias = await MainAPI.getTipos(_usuario.id);
+            _categoriasUsuario = Array.isArray(categorias) ? categorias : [];
+        } catch (e) {
+            _categoriasUsuario = [];
+        }
+    }
+
+    if (_categoriasUsuario.length === 0) {
+        select.innerHTML = '<option value="">Nenhuma categoria disponível</option>';
+        return;
+    }
+
+    select.innerHTML = _categoriasUsuario.map(cat => {
+        const id = Number(cat.id);
+        const titulo = cat.categoria?.titulo || `Categoria ${id}`;
+        return `<option value="${id}">${escHtml(titulo)}</option>`;
+    }).join('');
+}
+
+async function salvarAporteCaixinha() {
+    const c = _caixinhaAporteAtual;
+    if (!c) return;
+
+    const valor = MainAPI.obterValorMoeda(document.getElementById('inputAporteValor'));
+    const instituicaoId = Number(document.getElementById('selectAporteInstituicao').value);
+    const movimento = document.getElementById('selectAporteMovimento').value;
+    const categoriaId = Number(document.getElementById('selectAporteCategoria').value);
+    const dataEvento = document.getElementById('inputAporteData').value;
+    const titulo = (document.getElementById('inputAporteTitulo').value || '').trim();
+    const descricaoDigitada = (document.getElementById('inputAporteDescricao').value || '').trim();
+    const descricao = descricaoDigitada || 'Aporte realizado pela tela de caixinhas';
+
+    if (valor <= 0) { mostrarToast('Informe um valor válido para o aporte.', 'erro'); return; }
+    if (!Number.isFinite(instituicaoId) || instituicaoId <= 0) { mostrarToast('Selecione uma instituição válida.', 'erro'); return; }
+    if (!movimento) { mostrarToast('Selecione o tipo de movimento.', 'erro'); return; }
+    if (!Number.isFinite(categoriaId) || categoriaId <= 0) { mostrarToast('Selecione uma categoria válida.', 'erro'); return; }
+    if (!dataEvento) { mostrarToast('Informe a data do aporte.', 'erro'); return; }
+    if (!titulo) { mostrarToast('Informe um título para o aporte.', 'erro'); return; }
+
+    const payload = {
+        financeiro: {
+            usuario_id: _usuario.id,
+            tipo: 'Poupanca',
+            valor,
+            descricao,
+            dataEvento,
+            caixinha_id: c.id
+        },
+        instituicao: [{
+            instituicaoUsuario_id: instituicaoId,
+            tipoMovimento: movimento,
+            valor,
+            parcelas: 1
+        }],
+        detalhe: {
+            categoriaUsuario_id: [categoriaId],
+            tituloGasto: titulo
+        }
+    };
+
+    const btn = document.getElementById('btnSalvarAporte');
+    btn.disabled = true;
+    btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Salvando...";
+
+    try {
+        const res = await MainAPI.registrarGasto(payload);
+        if (res.ok) {
+            fecharModalAporte();
+            mostrarToast('Saldo adicionado na caixinha com sucesso!', 'sucesso');
+            await Promise.all([carregarKPIs(), carregarCaixinhas(_filtroAtivo)]);
+        } else {
+            const err = await res.text().catch(() => '');
+            mostrarToast(`Erro ao salvar aporte: ${res.status}. ${err}`, 'erro');
+        }
+    } catch (e) {
+        mostrarToast('Erro de conexão ao salvar aporte.', 'erro');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<i class='bx bx-save'></i> Salvar aporte";
+    }
+}
 
 // ════════════════════════════════════════════════════════════════
 // MODAL CRIAR / EDITAR
@@ -817,6 +974,14 @@ function formatarMoeda(valor) {
     return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function hojeISO() {
+    const agora = new Date();
+    const y = agora.getFullYear();
+    const m = String(agora.getMonth() + 1).padStart(2, '0');
+    const d = String(agora.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
 function formatarData(iso) {
     if (!iso) return '–';
     // Suporta array [ano,mes,dia] ou string "aaaa-mm-dd"
@@ -861,4 +1026,3 @@ function mostrarToast(msg, tipo) {
         setTimeout(() => toast.remove(), 320);
     }, 3500);
 }
-
