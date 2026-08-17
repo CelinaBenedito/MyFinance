@@ -2,6 +2,15 @@
 div_alerta.style.display = 'none';
 let loginEmAndamento = false;
 
+function mostrarMensagemDeSessaoExpirada() {
+    const mensagem = window.MainAPI?.obterMensagemAutenticacao?.();
+    if (mensagem) {
+        alerta(`${mensagem} <button onclick='div_alerta.style.display="none"'>OK</button>`);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", mostrarMensagemDeSessaoExpirada);
+
 function obterBotaoLogin() {
     return document.getElementById("btn_login");
 }
@@ -91,10 +100,11 @@ function checarDados(){
     );
     console.warn("Redirecionando para o login!")
 
-    login(email, senha);
+    const manterConectado = document.getElementById("ipt_manter_conectado")?.checked !== false;
+    login(email, senha, manterConectado);
 }
 
-function login(email, senha){
+function login(email, senha, manterConectado){
     if (loginEmAndamento) return;
 
     console.warn("Iniciando o login!");
@@ -115,7 +125,7 @@ function login(email, senha){
                 }
 
                 const usuarioAutenticado = window.MainAPI?.salvarSessao
-                    ? window.MainAPI.salvarSessao(usuario, token)
+                    ? window.MainAPI.salvarSessao(usuario, token, manterConectado)
                     : Object.assign({}, usuario, token ? { token: token } : {});
                 const perfis = JSON.parse(localStorage.getItem("perfis") || "[]");
                 const idx = perfis.findIndex(p => p.id === usuarioAutenticado.id);
@@ -124,7 +134,7 @@ function login(email, senha){
                     nome: usuarioAutenticado.nome,
                     sobrenome: usuarioAutenticado.sobrenome,
                     imagem: usuarioAutenticado.imagem || null,
-                    token: usuarioAutenticado.token || null
+                    token: manterConectado ? (usuarioAutenticado.token || null) : null
                 };
                 if (idx === -1) {
                     perfis.push(perfilAtualizado);

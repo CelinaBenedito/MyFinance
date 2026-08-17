@@ -1,6 +1,10 @@
 (function () {
     const LOCAL_API = "https://my-finance-api-eqdubfc7bvg6brdw.brazilsouth-01.azurewebsites.net";
     const AUTH_TOKEN_KEY = "authToken";
+    const AUTH_PERSIST_KEY = "authPersist";
+    const AUTH_REDIRECT_MESSAGE_KEY = "authRedirectMessage";
+    const REFRESH_TOKEN_PATHS = ["/usuarios/refresh-token", "/usuarios/renovar-token", "/auth/refresh", "/auth/refresh-token"];
+    let renovacaoEmAndamento = null;
 
     function obterUsuarioLogado() {
         try {
@@ -12,30 +16,58 @@
 
     function obterTokenAutenticacao() {
         const usuario = obterUsuarioLogado();
-        return localStorage.getItem(AUTH_TOKEN_KEY) || usuario?.token || null;
+        return sessionStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY) || usuario?.token || null;
     }
 
-    function salvarSessao(usuario, token) {
+    function deveManterContaConectada() {
+        return localStorage.getItem(AUTH_PERSIST_KEY) === "1";
+    }
+
+    function salvarMensagemAutenticacao(mensagem) {
+        if (!mensagem) return;
+        localStorage.setItem(AUTH_REDIRECT_MESSAGE_KEY, mensagem);
+    }
+
+    function obterMensagemAutenticacao() {
+        const mensagem = localStorage.getItem(AUTH_REDIRECT_MESSAGE_KEY) || null;
+        if (mensagem) {
+            localStorage.removeItem(AUTH_REDIRECT_MESSAGE_KEY);
+        }
+        return mensagem;
+    }
+
+    function salvarSessao(usuario, token, manterConectado = true) {
         if (!usuario || !usuario.id) return null;
 
-        const sessao = token
-            ? Object.assign({}, usuario, { token })
-            : Object.assign({}, usuario);
+        const sessao = Object.assign({}, usuario);
+        delete sessao.token;
 
         localStorage.setItem("usuarioLogado", JSON.stringify(sessao));
+        localStorage.setItem(AUTH_PERSIST_KEY, manterConectado ? "1" : "0");
 
-        if (sessao.token) {
-            localStorage.setItem(AUTH_TOKEN_KEY, sessao.token);
+        if (token) {
+            if (manterConectado) {
+                localStorage.setItem(AUTH_TOKEN_KEY, token);
+                sessionStorage.removeItem(AUTH_TOKEN_KEY);
+            } else {
+                sessionStorage.setItem(AUTH_TOKEN_KEY, token);
+                localStorage.removeItem(AUTH_TOKEN_KEY);
+            }
         } else {
             localStorage.removeItem(AUTH_TOKEN_KEY);
+            sessionStorage.removeItem(AUTH_TOKEN_KEY);
         }
 
-        return sessao;
+        return token
+            ? Object.assign({}, sessao, { token })
+            : sessao;
     }
 
     function limparSessao() {
         localStorage.removeItem("usuarioLogado");
         localStorage.removeItem(AUTH_TOKEN_KEY);
+        localStorage.removeItem(AUTH_PERSIST_KEY);
+        sessionStorage.removeItem(AUTH_TOKEN_KEY);
         if (window.AppCache) window.AppCache.clearAll();
     }
 
@@ -52,6 +84,9 @@
         const token = obterTokenAutenticacao();
         if (usuario?.id && token) return;
 
+        if (usuario?.id && !token) {
+            salvarMensagemAutenticacao("Você foi desconectado. Faça login novamente.");
+        }
         limparSessao();
         window.location.href = "login.html";
     }
@@ -86,9 +121,67 @@
         return headers;
     }
 
+    function ehRespostaNaoAutorizada(response) {
+        return response && (response.status === 401 || response.status === 403);
+    }
+
+    function ehEndpointRenovacao(url) {
+        if (!url) return false;
+        return REFRESH_TOKEN_PATHS.some(path => String(url).toLowerCase().includes(path.toLowerCase()));
+    }
+
+    function ehEndpointLogin(url) {
+        return String(url || "").toLowerCase().includes("/usuarios/login");
+    }
+
+    function tratarSessaoExpirada() {
+        salvarMensagemAutenticacao("Sua sessão expirou. Faça login novamente.");
+        limparSessao();
+        if (!paginaPublica()) {
+            window.location.href = "login.html";
+        }
+    }
+
+    async function tentarRenovarToken() {
+        const tokenAtual = obterTokenAutenticacao();
+        if (!tokenAtual) return null;
+
+        for (const path of REFRESH_TOKEN_PATHS) {
+            try {
+                const resposta = await nativeFetch(buildUrl(path), {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + tokenAtual
+                    },
+                    body: JSON.stringify({ token: tokenAtual })
+                });
+
+                if (!resposta.ok) continue;
+
+                let payload = null;
+                try {
+                    payload = await resposta.json();
+                } catch (_) {
+                    payload = null;
+                }
+
+                const tokenRenovado = payload?.token || payload?.accessToken || payload?.jwt || null;
+                if (!tokenRenovado) continue;
+
+                const usuario = obterUsuarioLogado();
+                salvarSessao(usuario, tokenRenovado, true);
+                return tokenRenovado;
+            } catch (_) {
+            }
+        }
+
+        return null;
+    }
+
     const nativeFetch = window.fetch ? window.fetch.bind(window) : null;
     if (nativeFetch) {
-        window.fetch = function (input, init) {
+        window.fetch = async function (input, init) {
             const url = typeof input === "string"
                 ? input
                 : (input && input.url ? input.url : "");
@@ -97,14 +190,49 @@
                 return nativeFetch(input, init);
             }
 
+            let requestInput = input;
+            let requestOptions = init;
+
             if (typeof Request !== "undefined" && input instanceof Request) {
                 const headers = criarHeadersComAuth(init && init.headers ? init.headers : input.headers);
-                return nativeFetch(new Request(input, Object.assign({}, init || {}, { headers })));
+                requestInput = new Request(input, Object.assign({}, init || {}, { headers }));
+            } else {
+                requestOptions = Object.assign({}, init || {});
+                requestOptions.headers = criarHeadersComAuth(requestOptions.headers);
+                requestInput = buildUrl(url);
             }
 
-            const options = Object.assign({}, init || {});
-            options.headers = criarHeadersComAuth(options.headers);
-            return nativeFetch(buildUrl(url), options);
+            const response = await nativeFetch(requestInput, requestOptions);
+
+            if (!ehRespostaNaoAutorizada(response) || ehEndpointRenovacao(url) || ehEndpointLogin(url)) {
+                return response;
+            }
+
+            if (!deveManterContaConectada()) {
+                tratarSessaoExpirada();
+                return response;
+            }
+
+            if (!renovacaoEmAndamento) {
+                renovacaoEmAndamento = tentarRenovarToken().finally(() => {
+                    renovacaoEmAndamento = null;
+                });
+            }
+            const novoToken = await renovacaoEmAndamento;
+            if (!novoToken) {
+                tratarSessaoExpirada();
+                return response;
+            }
+
+            if (typeof Request !== "undefined" && input instanceof Request) {
+                const retryHeaders = criarHeadersComAuth(init && init.headers ? init.headers : input.headers);
+                const retryRequest = new Request(input, Object.assign({}, init || {}, { headers: retryHeaders }));
+                return nativeFetch(retryRequest);
+            }
+
+            const retryOptions = Object.assign({}, init || {});
+            retryOptions.headers = criarHeadersComAuth(retryOptions.headers);
+            return nativeFetch(buildUrl(url), retryOptions);
         };
     }
 
@@ -338,6 +466,7 @@
         obterTokenAutenticacao,
         salvarSessao,
         limparSessao,
+        obterMensagemAutenticacao,
         formatarLocalDateTime,
         aplicarMascaraData,
         dataParaISO,
