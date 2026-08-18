@@ -15,6 +15,7 @@ let _instsSelecionadas = new Set(); // ids de instituicaoUsuario selecionados
 let _todasInstituicoes = [];       // lista de instituições do usuário
 let _categoriasUsuario = [];       // categorias disponíveis para registrar aporte
 let _caixinhaAporteAtual = null;   // caixinha selecionada no modal de aporte
+let _caixinhaResgateAtual = null;  // caixinha selecionada no modal de resgate
 
 // ── Defaults de taxa por tipo ──────────────────────────────────
 const TAXA_DEFAULTS = {
@@ -303,14 +304,17 @@ function abrirModalDetalhes(c) {
     const btnEnc = document.getElementById('btnDetEncerrar');
     const btnReab = document.getElementById('btnDetReabrir');
     const btnAporte = document.getElementById('btnDetAportar');
+    const btnResgate = document.getElementById('btnDetResgatar');
     if (encerrada) {
         btnEnc.style.display  = 'none';
         btnReab.style.display = '';
         if (btnAporte) btnAporte.style.display = 'none';
+        if (btnResgate) btnResgate.style.display = 'none';
     } else {
         btnEnc.style.display  = '';
         btnReab.style.display = 'none';
         if (btnAporte) btnAporte.style.display = '';
+        if (btnResgate) btnResgate.style.display = '';
     }
 
     document.getElementById('modalDetOverlay').classList.add('aberto');
@@ -597,6 +601,119 @@ async function salvarAporteCaixinha() {
     } finally {
         btn.disabled = false;
         btn.innerHTML = "<i class='bx bx-save'></i> Salvar aporte";
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// MODAL RESGATE
+// ════════════════════════════════════════════════════════════════
+function abrirModalResgateDaAtual(ev) {
+    if (ev) ev.stopPropagation();
+    if (!_caixinhaAtual || !_caixinhaAtual.isAtiva) return;
+    const atual = _caixinhaAtual;
+    fecharModalDet();
+    abrirModalResgate(atual);
+}
+
+function abrirModalResgate(caixinha) {
+    if (!caixinha || !caixinha.isAtiva) {
+        mostrarToast('Selecione uma caixinha ativa para resgatar.', 'erro');
+        return;
+    }
+
+    _caixinhaResgateAtual = caixinha;
+    document.getElementById('modalResgateTitulo').innerHTML = `<i class='bx bx-minus-circle'></i> Resgatar saldo de "${escHtml(caixinha.nome)}"`;
+    document.getElementById('resgateResumoCaixinha').textContent = `Caixinha: ${caixinha.nome}`;
+
+    const inputValor = document.getElementById('inputResgateValor');
+    MainAPI.resetarMascaraMoeda(inputValor);
+    MainAPI.aplicarMascaraMoeda(inputValor);
+
+    document.getElementById('selectResgateMovimento').value = 'Debito';
+    document.getElementById('inputResgateData').value = hojeISO();
+    document.getElementById('inputResgateDescricao').value = '';
+    preencherInstituicoesResgate(caixinha);
+    document.getElementById('modalResgateOverlay').classList.add('aberto');
+}
+
+function preencherInstituicoesResgate(caixinha) {
+    const select = document.getElementById('selectResgateInstituicao');
+    const vinculadas = Array.isArray(caixinha.instituicoes) ? caixinha.instituicoes : [];
+
+    if (vinculadas.length === 0) {
+        select.innerHTML = '<option value="">Selecionar automaticamente</option>';
+        return;
+    }
+
+    const opcoes = vinculadas.map(inst => {
+        const id = Number(inst.id);
+        if (!Number.isFinite(id) || id <= 0) return '';
+        const nomeFallback = _todasInstituicoes.find(i => Number(i.id) === id);
+        const nome = inst.nome
+            || nomeFallback?.intituicao?.nome
+            || nomeFallback?.instituicao?.nome
+            || nomeFallback?.nomeInstituicao
+            || nomeFallback?.nome
+            || `Instituição ${id}`;
+        return `<option value="${id}">${escHtml(nome)}</option>`;
+    }).filter(Boolean);
+
+    select.innerHTML = [
+        '<option value="">Selecionar automaticamente (primeira vinculada)</option>',
+        ...opcoes
+    ].join('');
+}
+
+function fecharModalResgate() {
+    document.getElementById('modalResgateOverlay').classList.remove('aberto');
+    _caixinhaResgateAtual = null;
+}
+
+function fecharModalResgateOutside(e) {
+    if (e.target === document.getElementById('modalResgateOverlay')) fecharModalResgate();
+}
+
+async function salvarResgateCaixinha() {
+    const c = _caixinhaResgateAtual;
+    if (!c) return;
+
+    const valor = MainAPI.obterValorMoeda(document.getElementById('inputResgateValor'));
+    const instituicaoUsuarioId = Number(document.getElementById('selectResgateInstituicao').value);
+    const tipoMovimento = document.getElementById('selectResgateMovimento').value || 'Debito';
+    const dataResgate = document.getElementById('inputResgateData').value;
+    const descricao = (document.getElementById('inputResgateDescricao').value || '').trim();
+
+    if (valor <= 0) { mostrarToast('Informe um valor válido para o resgate.', 'erro'); return; }
+    if (!dataResgate) { mostrarToast('Informe a data do resgate.', 'erro'); return; }
+    if (!descricao) { mostrarToast('Informe a descrição do resgate.', 'erro'); return; }
+
+    const payload = {
+        valor,
+        descricao,
+        dataResgate,
+        tipoMovimento,
+        ...(Number.isFinite(instituicaoUsuarioId) && instituicaoUsuarioId > 0 ? { instituicaoUsuarioId } : {})
+    };
+
+    const btn = document.getElementById('btnSalvarResgate');
+    btn.disabled = true;
+    btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Salvando...";
+
+    try {
+        const res = await MainAPI.resgatarCaixinha(c.id, payload);
+        if (res.ok) {
+            fecharModalResgate();
+            mostrarToast('Resgate realizado com sucesso!', 'sucesso');
+            await Promise.all([carregarKPIs(), carregarCaixinhas(_filtroAtivo)]);
+        } else {
+            const err = await res.text().catch(() => '');
+            mostrarToast(`Erro ao salvar resgate: ${res.status}. ${err}`, 'erro');
+        }
+    } catch (e) {
+        mostrarToast('Erro de conexão ao salvar resgate.', 'erro');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<i class='bx bx-save'></i> Salvar resgate";
     }
 }
 

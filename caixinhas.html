@@ -431,6 +431,9 @@
                 <button class="btn-cxh-aportar"   id="btnDetAportar"   onclick="abrirModalAporteDaAtual(event)">
                     <i class='bx bx-plus-circle'></i> Adicionar saldo
                 </button>
+                <button class="btn-cxh-resgatar"  id="btnDetResgatar"  onclick="abrirModalResgateDaAtual(event)">
+                    <i class='bx bx-minus-circle'></i> Resgatar
+                </button>
                 <button class="btn-cxh-editar"    id="btnDetEditar"    onclick="editarCaixinhaAtual()">
                     <i class='bx bx-edit'></i> Editar
                 </button>
@@ -518,10 +521,64 @@
         </div>
     </div>
 
+    <!-- ════════════════════════════════════════════════════════
+         MODAL: RESGATE NA CAIXINHA
+    ════════════════════════════════════════════════════════ -->
+    <div class="cxh-modal-overlay" id="modalResgateOverlay" onclick="fecharModalResgateOutside(event)">
+        <div class="cxh-modal" id="modalResgate">
+            <div class="cxh-modal-header">
+                <h2 id="modalResgateTitulo"><i class='bx bx-minus-circle'></i> Resgatar saldo</h2>
+                <button class="cxh-modal-close" onclick="fecharModalResgate()"><i class='bx bx-x'></i></button>
+            </div>
+
+            <div class="cxh-modal-body">
+                <div class="cxh-aporte-resumo" id="resgateResumoCaixinha">Caixinha: –</div>
+
+                <div class="cxh-campo-wrap">
+                    <label class="cxh-campo-label">Valor do resgate *</label>
+                    <input type="text" id="inputResgateValor" class="cxh-campo-input" placeholder="R$ 0,00" />
+                </div>
+
+                <div class="cxh-campo-row">
+                    <div class="cxh-campo-wrap">
+                        <label class="cxh-campo-label">Instituição (opcional)</label>
+                        <select id="selectResgateInstituicao" class="cxh-campo-input"></select>
+                    </div>
+                    <div class="cxh-campo-wrap">
+                        <label class="cxh-campo-label">Tipo de movimento</label>
+                        <select id="selectResgateMovimento" class="cxh-campo-input">
+                            <option value="Debito">Débito</option>
+                            <option value="Credito">Crédito</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="cxh-campo-wrap">
+                    <label class="cxh-campo-label">Data do resgate *</label>
+                    <input type="date" id="inputResgateData" class="cxh-campo-input" />
+                </div>
+
+                <div class="cxh-campo-wrap">
+                    <label class="cxh-campo-label">Descrição *</label>
+                    <input type="text" id="inputResgateDescricao" class="cxh-campo-input" maxlength="220" placeholder="Ex: Compra do notebook" />
+                </div>
+            </div>
+
+            <div class="cxh-modal-footer">
+                <button class="btn-cxh-cancelar" onclick="fecharModalResgate()">
+                    <i class='bx bx-x'></i> Cancelar
+                </button>
+                <button class="btn-cxh-resgatar-primario" id="btnSalvarResgate" onclick="salvarResgateCaixinha()">
+                    <i class='bx bx-save'></i> Salvar resgate
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/cache.js?v=1"></script>
-    <script src="js/main.js?v=2"></script>
+    <script src="js/main.js?v=3"></script>
     <script src="js/mascote.js?v=3"></script>
-    <script src="js/caixinhas.js?v=2"></script>
+    <script src="js/caixinhas.js?v=4"></script>
     <script src="js/navbar.js?v=3"></script>
 </body>
 

@@ -701,6 +701,23 @@
 }
 .btn-cxh-aportar:hover { background: rgba(5,150,105,0.08); }
 
+.btn-cxh-resgatar {
+    padding: 10px 18px;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--red-700);
+    border: 1.5px solid var(--red-700);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+.btn-cxh-resgatar:hover { background: var(--red-100); }
+
 .btn-cxh-reabrir-confirmar {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 9px 18px; border: none; border-radius: 8px;
@@ -849,6 +866,24 @@
 }
 .btn-cxh-aportar-primario:hover:not(:disabled) { opacity: 0.85; }
 .btn-cxh-aportar-primario:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-cxh-resgatar-primario {
+    padding: 10px 22px;
+    border-radius: 10px;
+    background: var(--red-600, #dc2626);
+    color: #fff;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+}
+.btn-cxh-resgatar-primario:hover:not(:disabled) { opacity: 0.85; }
+.btn-cxh-resgatar-primario:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── Feedback / Toast ─────────────────────────────────────── */
 .cxh-toast {

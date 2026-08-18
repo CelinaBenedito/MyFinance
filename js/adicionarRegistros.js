@@ -807,90 +807,9 @@ function _initRecurringSubOptions() {
     }
 } // fim _initRecurringSubOptions
 
-/* ══════════════════════════════════════════════════
-   Painel de Poupança (Caixinha)
-══════════════════════════════════════════════════ */
-let _caixinhas = [];
-let _caixinhaSelecionadaId = null;
-
-async function _carregarCaixinhas() {
-    if (!userId) return;
-    try {
-        _caixinhas = await MainAPI.getCaixinhas(userId);
-    } catch (e) {
-        _caixinhas = [];
-    }
-}
-
-function _renderPainelPoupanca(show) {
-    let painel = document.getElementById('ar-poupanca-painel');
-    if (!show) {
-        if (painel) painel.style.display = 'none';
-        _caixinhaSelecionadaId = null;
-        return;
-    }
-    if (!painel) {
-        // Cria o painel dinamicamente na primeira vez
-        painel = document.createElement('div');
-        painel.id = 'ar-poupanca-painel';
-        painel.className = 'ar-recurring-wrap ar-span-3';
-        // Insere após o bloco de tipo de movimento
-        const movWrap = document.getElementById('select_movimento')?.closest('.ar-field-wrap');
-        if (movWrap && movWrap.parentNode) {
-            movWrap.parentNode.insertBefore(painel, movWrap.nextSibling);
-        }
-    }
-    painel.style.display = '';
-
-    if (_caixinhas.length === 0) {
-        painel.innerHTML = `
-            <div style="background:var(--cor-tinte-suave);border-radius:12px;padding:14px 16px;border:1px solid var(--cor-tinte-borda);">
-                <p style="margin:0;color:var(--cor-texto-secundario);font-size:0.92rem;">
-                    <i class='bx bx-info-circle' style="color:var(--cor-principal);"></i>
-                    Nenhuma caixinha ativa encontrada. 
-                    <strong>Registre o aporte mesmo assim</strong> — ele aparecerá como Poupança sem caixinha vinculada.
-                </p>
-            </div>`;
-        _caixinhaSelecionadaId = null;
-        return;
-    }
-
-    const opts = _caixinhas.map(c => {
-        const pct   = c.percentualAtingido != null ? `${c.percentualAtingido.toFixed(1)}%` : '—';
-        const prazo = c.dataPrazo ? ` · prazo ${c.dataPrazo}` : '';
-        return `<option value="${c.id}">${c.nome} (${pct} atingido${prazo})</option>`;
-    }).join('');
-
-    painel.innerHTML = `
-        <div style="background:var(--cor-tinte-suave);border-radius:12px;padding:14px 16px;border:1px solid var(--cor-tinte-borda);display:flex;flex-direction:column;gap:10px;">
-            <span style="font-size:0.82rem;font-weight:700;color:var(--cor-texto-secundario);text-transform:uppercase;letter-spacing:0.5px;">Vincular a uma Caixinha</span>
-            <select id="ar-select-caixinha" style="background:var(--cor-fundo-card);border:1px solid var(--cor-tinte-borda);border-radius:8px;padding:8px 12px;color:var(--cor-texto-principal);font-size:0.95rem;">
-                <option value="">Sem caixinha (aporte avulso)</option>
-                ${opts}
-            </select>
-            <div id="ar-caixinha-info" style="display:none;font-size:0.87rem;color:var(--cor-texto-secundario);line-height:1.6;padding:8px 10px;background:var(--cor-fundo-campo);border-radius:8px;"></div>
-        </div>`;
-
-    document.getElementById('ar-select-caixinha').addEventListener('change', function () {
-        _caixinhaSelecionadaId = this.value || null;
-        const info = document.getElementById('ar-caixinha-info');
-        if (!_caixinhaSelecionadaId) { info.style.display = 'none'; return; }
-        const cx = _caixinhas.find(c => c.id === _caixinhaSelecionadaId);
-        if (!cx) { info.style.display = 'none'; return; }
-        const fmt = v => v != null ? `R$ ${Number(v).toFixed(2)}` : '—';
-        const pct = cx.percentualAtingido != null ? `${cx.percentualAtingido.toFixed(1)}%` : '—';
-        info.style.display = '';
-        info.innerHTML = `
-            <b>${cx.nome}</b><br>
-            Meta: <b>${fmt(cx.valorMeta)}</b> · Acumulado: <b>${fmt(cx.valorAtual)}</b> (${pct})<br>
-            ${cx.aporteMensalSugerido != null ? `Aporte mensal sugerido: <b style="color:var(--cor-principal)">${fmt(cx.aporteMensalSugerido)}</b>` : ''}
-            ${cx.mesesRestantes != null ? ` · ${cx.mesesRestantes} meses restantes` : ''}`;
-    });
-}
 
 function _onTipoChange() {
     const tipo = document.getElementById('select_tipo')?.value;
-    _renderPainelPoupanca(tipo === 'Poupanca');
     _renderPainelEmprestimo(tipo === 'Emprestimo');
     _renderPainelTransferencia(tipo === 'Transferencia');
 
@@ -923,13 +842,11 @@ function gerarInformacoes() {
     // Clear-on-focus for text fields
     setupClearOnFocus();
 
-    // Poupança: carrega caixinhas e escuta mudança de tipo
-    _carregarCaixinhas();
+    // Atualiza saldo display quando o tipo de movimento muda
+    // (crédito mostra limite disponível; débito mostra saldo de caixa)
     const selectTipo = document.getElementById('select_tipo');
     if (selectTipo) selectTipo.addEventListener('change', _onTipoChange);
 
-    // Atualiza saldo display quando o tipo de movimento muda
-    // (crédito mostra limite disponível; débito mostra saldo de caixa)
     const selectMov = document.getElementById('select_movimento');
     if (selectMov) selectMov.addEventListener('change', () => {
         const selectedInst = _tp['inst']?.selected || [];
@@ -1143,7 +1060,6 @@ async function registrar() {
             valor: valorTotal,
             descricao: Desc,
             dataEvento: data,
-            ...(tipo === 'Poupanca' && _caixinhaSelecionadaId ? { caixinha_id: _caixinhaSelecionadaId } : {}),
             ...(tipo === 'Emprestimo' && taxaEmprestimo != null ? { taxaRendimento: taxaEmprestimo } : {})
         },
         instituicao: instituicaoList,

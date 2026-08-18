@@ -541,6 +541,18 @@
         adicionarSaldo(payload) {
             return this.registrarGasto(payload);
         },
+        resgatarCaixinha(caixinhaId, payload) {
+            return postJson(`/caixinhas/${caixinhaId}/resgatar`, payload).then(res => {
+                if (res.ok && window.AppCache) {
+                    const uid = obterUsuarioLogado()?.id;
+                    if (uid) {
+                        window.AppCache.invalidarRegistros(uid);
+                        window.AppCache.invalidarDashboard(uid);
+                    }
+                }
+                return res;
+            });
+        },
         atualizarSaldo(payload) {
             return this.registrarGasto(payload);
         },
